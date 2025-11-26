@@ -13,7 +13,7 @@ const config = {
 
   basePath: isProd ? `/${repoName}` : "",
   assetPrefix: isProd
-    ? `https://zephinax.github.io/${repoName}/`  // Full URL = no 404
+    ? `https://ulysse-mercadal.github.io/${repoName}/`  // Full URL = no 404
     : "",
 };
 
