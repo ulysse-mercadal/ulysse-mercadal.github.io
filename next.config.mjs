@@ -12,12 +12,6 @@ const config = {
   images: { unoptimized: true },
   basePath: isProd ? `/${repoName}` : "",
   assetPrefix: isProd ? `/${repoName}` : "",
-
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
-  },
 };
 
 export default withMDX(config);
