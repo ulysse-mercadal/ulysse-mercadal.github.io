@@ -1,16 +1,21 @@
-import { RootProvider } from 'fumadocs-ui/provider/next';
+import { RootProvider } from 'fumadocs-ui/provider';
+import type { ReactNode } from 'react';
 import './global.css';
-import { Inter } from 'next/font/google';
 
-const inter = Inter({
-  subsets: ['latin'],
-});
-
-export default function Layout({ children }: LayoutProps<'/'>) {
+export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
-      <body className="flex flex-col min-h-screen">
-        <RootProvider>{children}</RootProvider>
+    <html lang="fr" suppressHydrationWarning>
+      <body>
+        <RootProvider
+          search={{
+            enabled: true,
+            options: {
+              type: 'static',  // \u2705 Recherche statique c�t� client
+            },
+          }}
+        >
+          {children}
+        </RootProvider>
       </body>
     </html>
   );
