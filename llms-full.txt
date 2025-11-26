@@ -1,0 +1,966 @@
+# R-Type
+
+
+
+***
+
+Welcome to the **R-Type** project documentation!
+This documentation covers the three core components of our implementation:
+
+* **3D Engine**: Responsible for rendering and scene management.
+* **Network Protocol**: Handles communication between clients and server.
+* **Game Engine**: Orchestrates game logic, entities, and systems.
+
+<Cards>
+  <Card title="3D Engine" href="docs/3d-engine/00-introduction" description="Learn about our custom C++ 3D rendering engine using OpenGL, Assimp, and GLM." />
+
+  <Card title="Network Protocol" href="docs/network-protocol/00-introduction" description="Documentation of the custom UDP/TCP-based protocol for real-time multiplayer." />
+
+  <Card title="Game Engine" href="docs/game-engine/00-introduction" description="Discover ou custom ECS. Controlling core game logic, entity-component system, and gameplay rules." />
+</Cards>
+
+
+# work in progress here
+
+
+
+# 3D Engine Overview
+
+
+
+***
+
+# 3D Engine — Overview
+
+Our custom C++ 3D engine is built for real-time rendering in game-like applications. It emphasizes **modularity**, **debuggability**, and **cross-platform compatibility** (currently Linux-focused, but with Windows supported).
+
+## Core Dependencies
+
+* **[OpenGL 4.6+](https://www.khronos.org/opengl/)** – Programmable rendering pipeline
+* **[GLM](https://github.com/g-truc/glm)** – Mathematics (vectors, matrices, quaternions)
+* **[Assimp](https://www.assimp.org/)** – Model parsing (`.fbx`, `.obj`; `.glTF` planned)
+* **[stb\_image](https://github.com/nothings/stb)** – Texture loading (PNG, JPG, TGA, etc.)
+* **[GLFW](https://www.glfw.org/) + [GLEW](http://glew.sourceforge.net/)** – Window creation and OpenGL context/extension management
+* **[CMake](https://cmake.org/)** – Build system (Linux-native workflow with `FetchContent`)
+
+To compile the game engine, just use our CMake, it will fetch our Dependencies by itself
+
+***
+
+## Key Features
+
+* Entity-based scene graph (`GameObject` system)
+* Full transform control (position, rotation, scale)
+* Shader pipeline with uniform binding abstraction
+* Skeletal animation support (`.FBX` only, `.GLTF` in the future)
+* Material and texture system with debug validation
+* Scene-level resource management
+
+
+# Setup viewport
+
+
+
+The 3D engine follows a standard **init → update → render** loop. These three methods form the backbone of the rendering pipeline.
+
+***
+
+## `initialize()`
+
+```cpp
+bool Renderer3D::initialize();
+```
+
+### Purpose
+
+Initializes all subsystems required for rendering:
+
+* OpenGL context (via GLEW),
+* Built-in shaders (`simple`, `phong`, `pixelize`),
+* Framebuffer pipeline,
+* OpenGL render states (depth test, culling, blending).
+
+### Usage
+
+Call **once** at application startup, after OpenGL context creation.
+
+```cpp
+Renderer3D renderer;
+if (!renderer.initialize()) {
+    // handle initialization errors
+}
+```
+
+### Return Value
+
+* `true` on success,
+* `false` if any subsystem fails (e.g., shader compilation error).
+
+> Must be called before `addObject()`, `update()`, or `render()` it should be the **FIRST** thing happening in the viewport setup.
+
+***
+
+## `update()`
+
+```cpp
+void Renderer3D::update(const Camera& camera, float width, float height);
+```
+
+### Purpose
+
+Prepares the scene for rendering by:
+
+1. Updating skeletal animations (using delta time),
+2. Rebuilding the list of visible objects (`_renderBatches`),
+3. Performing frustum culling (based on camera view),
+4. Sorting opaque and transparent objects,
+5. Computing view and projection matrices.
+
+### Parameters
+
+* `camera`: Contains position and orientation (see camera documentation page for more info).
+* `width`, `height`: Viewport dimensions (used for aspect ratio in projection matrix).
+
+### Usage
+
+Call **once per frame**, before `render()`.
+
+```cpp
+Camera cam;
+// ... update camera position ...
+renderer.update(cam, windowWidth, windowHeight);
+```
+
+> Internally computes delta time using `std::chrono` for smooth animation.
+
+***
+
+## `render()`
+
+```cpp
+void Renderer3D::render(const Camera& camera);
+```
+
+### Purpose
+
+Draws the scene using the current render batches and active shader(s). Supports:
+
+* Single-pass rendering (with `_currentShader`),
+* Multi-pass post-processing pipeline (via `_shaderPipeline`),
+* Transparent object blending (sorted back-to-front),
+* Skeletal animation (bone matrices uploaded per batch).
+
+### Behavior
+
+1. Binds framebuffers if a shader pipeline is active,
+2. Renders geometry with correct materials and transforms,
+3. Applies post-processing passes (e.g., pixelation) via full-screen quads,
+4. Resets OpenGL state (`glBindVertexArray(0)`, `glUseProgram(0)`, etc.).
+
+### Usage
+
+Call **once per frame**, immediately after `update()`.
+
+```cpp
+renderer.render(cam);
+```
+
+> If `_shaderPipeline` is empty, uses `_currentShader`.
+
+> Transparent materials are rendered after opaque ones with depth masking disabled.
+
+***
+
+## Typical Frame Loop
+
+```cpp
+// Initialization (once)
+Renderer3D renderer;
+renderer.initialize();
+int objId = renderer.addObject("assets/indien-qui-danse.fbx");
+
+// Per-frame loop
+while (window.isOpen()) {
+    glViewport(0, 0, windowSize.x, windowSize.y);
+
+    Camera cam = getPlayerCamera();
+    int width = window.getSize().x;
+    int height = window.getSize().y;
+
+    renderer.update(camera, windowSize.x, windowSize.y);      // ← Prepare batches + animations
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    renderer.render(camera);                                  // ← Draw everything
+    window.pushGLStates();
+    sf::View sfmlView = window.getDefaultView();
+    window.setView(sfmlView);
+    window.draw(centerDot);
+    window.popGLStates();
+    window.display();
+}
+```
+
+> The engine **does not manage the window or input** — it only handles 3D rendering logic.
+
+using SFML you should create the window as it follows
+
+```cpp
+sf::ContextSettings settings;
+settings.depthBits = 24;
+settings.stencilBits = 8;
+settings.antialiasingLevel = 4;
+
+sf::RenderWindow window;
+window.create(sf::VideoMode(1920, 1080), "RTYPE - 3d engine", sf::Style::Default, settings);
+window.setFramerateLimit(60);
+window.setVerticalSyncEnabled(true);
+window.setActive(true);
+
+glEnable(GL_DEPTH_TEST);
+glDisable(GL_CULL_FACE);
+glClearColor(0.2f, 0.2f, 0.4f, 1.0f);   // purplish color
+```
+
+
+# Camera managment
+
+
+
+The `Camera` class provides a navigation system with movement and rotation controls. It maintains position, orientation (yaw/pitch), and computes the view matrix for rendering.
+
+## Core Interface
+
+### Movement
+
+```cpp
+void Camera::move(float forward, float right, float up, float speed);
+```
+
+Moves the camera in local space:
+
+* `forward`: +1 = move forward (along camera look direction)
+* `right`: +1 = strafe right (perpendicular to look and up)
+* `up`: +1 = move upward (world Y-axis)
+* `speed`: scalar multiplier (e.g., `0.1f` per frame)
+
+> Movement respects current rotation pressing key binded to the forward + 1 always moves in the direction the camera is facing.
+
+### Rotation
+
+```cpp
+void Camera::rotate(float pitchDelta, float yawDelta);
+```
+
+Rotates the camera using Euler angles:
+
+* `pitchDelta`: vertical rotation (in **degrees**), clamped to 89
+* `yawDelta`: horizontal rotation (in **degrees**), unbounded (360 wrap)
+
+> Rotation follows classic FPS behavior: mouse X \u2192 yaw, mouse Y \u2192 pitch.
+
+***
+
+## Usage Example (SFML Input)
+
+```cpp
+float speed = 0.1f;
+float rotSpeed = 1.0f; // degrees per frame
+
+// Movement (WASD + E/Q for vertical)
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+    camera.move(1, 0, 0, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+    camera.move(-1, 0, 0, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+    camera.move(0, -1, 0, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+    camera.move(0, 1, 0, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+    camera.move(0, 0, 1, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+    camera.move(0, 0, -1, speed);
+
+// Rotation (arrow keys)
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+    camera.rotate(0, rotSpeed);      // yaw right
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+    camera.rotate(0, -rotSpeed);     // yaw left
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+    camera.rotate(rotSpeed, 0);      // pitch down
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+    camera.rotate(-rotSpeed, 0);     // pitch up
+```
+
+> **Note**: In a final game, you typically use **mouse delta** for rotation instead of arrow keys.
+
+> yes this exemple is for a qwerty Keyboard, maybe because it's supperior to azerty for coding :)
+
+***
+
+## Accessing Camera State
+
+```cpp
+const glm::vec3& Camera::getPosition() const;
+const glm::vec3& Camera::getFront() const;     // normalized look direction
+const glm::vec3& Camera::getUp() const;        // world up (usually (0,1,0))
+const glm::vec3& Camera::getRight() const;     // right vector (computed)
+
+glm::mat4 Camera::getViewMatrix() const;       // ready for shader uniform
+```
+
+These are used internally by `Renderer3D::update()` and `render()`.
+
+***
+
+## Important Notes
+
+* **Pitch is clamped** to \[-89, 89] to prevent gimbal lock and upside-down view.
+* **Yaw is unbounded** it accumulates over time (e.g., 720 = two full turns).
+* All rotation inputs are expected in **degrees**, not radians.
+
+***
+
+## Integration with Renderer
+
+Pass the camera directly to the renderer each frame:
+
+```cpp
+renderer.update(camera, windowWidth, windowHeight);
+renderer.render(camera);
+```
+
+The renderer uses `camera.getViewMatrix()` and `camera.getFront()` for culling and lighting.
+
+
+# Add an object
+
+
+
+Adds a 3D model to the scene and returns a unique instance ID for transformation, animation, or removal.
+
+***
+
+## Signature
+
+```cpp
+int Renderer3D::addObject(
+    const std::string& modelPath,
+    const glm::vec3& position = glm::vec3(0.0f),
+    const glm::vec3& rotation = glm::vec3(0.0f),
+    const glm::vec3& scale = glm::vec3(1.0f)
+);
+```
+
+***
+
+## Parameters
+
+| Parameter   | Type                 | Description                                                                                 |
+| ----------- | -------------------- | ------------------------------------------------------------------------------------------- |
+| `modelPath` | `const std::string&` | Path to the model file (supports `.obj` and `.fbx`). Relative to the working directory.     |
+| `position`  | `glm::vec3`          | World-space position of the object (default: origin).                                       |
+| `rotation`  | `glm::vec3`          | Euler rotation in **radians** (XYZ or YXZ convention, depending on your `Transform` class). |
+| `scale`     | `glm::vec3`          | Local scale (default: uniform scale of 1).                                                  |
+
+> The rotation is applied as: `R = R_x * R_y * R_z` (intrinsic Tait-Bryan angles), consistent with your `Transform::getMatrix()` implementation.
+
+***
+
+## Return Value
+
+* **`int`**: A non-negative instance ID if successful.
+* **`-1`**: If the renderer is not initialized, the file extension is unsupported, or parsing fails.
+
+> The ID is **per-model cache**, not globally unique across all models. It represents the index of the instance **within its model instance list**, to make it ecs compiliant you have to identify the object by it's cachekey (it's his file path) and his specific id.
+
+***
+
+## Behavior
+
+1. **Caching**:
+   If the model at `modelPath` has never been loaded, it is:
+   * Parsed via `ObjParser` (`.obj`) or `FbxParser` (`.fbx`),
+   * Converted into internal `Vertex`, `Material`, and (if animated) `Bone` data,
+   * Uploaded to GPU (VAO/VBO),
+   * Stored in an internal `Cache` keyed by path.
+
+2. **Instancing**:
+   A new `InstanceData` is appended to the cache instance list, containing:
+   * The provided `Transform`,
+   * A default `materialIndex` of `0`.
+
+3. **Animation (FBX only)**:
+   If the model has skinning (`model.hasSkinning == true`) and contains animations:
+   * An `Animator` is created,
+   * The **first animation** in the list is played automatically,
+   * The animator is stored in `_animators` using the instance ID.
+
+***
+
+## Examples
+
+### Load a static OBJ model
+
+```cpp
+int id = renderer.addObject(
+    "assets/crate.obj",
+    {0, 0, -5});
+
+if (id == -1) {
+    // handle loading errors
+}
+```
+
+### Load an animated FBX character
+
+```cpp
+int robotId = renderer.addObject(
+    "assets/robot.fbx",
+    {2.0f, 0.0f, -3.0f},
+    {0.0f, glm::radians(90.0f), 0.0f}, // rotate to face camera
+    {1.5f} // scale up
+);
+// If FBX contains animations, the first one starts playing automatically.
+```
+
+***
+
+## See Also
+
+* `removeAllObjects()` Clear all instances.
+  ```cpp
+  void removeAllObjects();
+  ```
+
+* `getObjectCount()` Get all object count in renderer
+  ```cpp
+  size_t getObjectCount() const;
+  ```
+
+> to see this object in the viewport you are must use at least one shader, learn more in the shader pipline doc page
+
+
+# Transform an object
+
+
+
+After creating an object with `addObject()`, you can dynamically update its position, rotation, or scale using the following public methods.
+
+***
+
+## Object Identification
+
+Because object IDs are **local to each model**, you must always specify:
+
+* `modelPath`: the exact path used in `addObject()` (e.g., `"assets/indien-qui-danse.fbx"`),
+* `instanceId`: the integer returned by `addObject()`.
+
+> The pair `(modelPath, instanceId)` uniquely identifies an instance.
+
+***
+
+## Available Methods
+
+### `setObjectPosition`
+
+Sets the world-space position of an instance.
+
+```cpp
+bool Renderer3D::setObjectPosition(
+    const std::string& modelPath,
+    int instanceId,
+    const glm::vec3& position
+);
+```
+
+**Example**:
+
+```cpp
+int id = renderer.addObject("props/crate.obj", {0,0,0});
+renderer.setObjectPosition("props/crate.obj", id, {5.0f, 1.0f, -3.0f});
+```
+
+***
+
+### `setObjectRotation`
+
+Sets absolute Euler rotation in **radians** (YXZ convention).
+
+```cpp
+bool Renderer3D::setObjectRotation(
+    const std::string& modelPath,
+    int instanceId,
+    const glm::vec3& rotation
+);
+```
+
+**Example**:
+
+```cpp
+int id = renderer.addObject("props/crate.obj", {0,0,0});
+renderer.setObjectRotation("props/crate.obj", id, {0.0f, glm::radians(90.0f), 0.0f});
+```
+
+***
+
+### `setObjectScale`
+
+Sets local scale per axis (or uniform if using `glm::vec3(s)`).
+
+```cpp
+bool Renderer3D::setObjectScale(
+    const std::string& modelPath,
+    int instanceId,
+    const glm::vec3& scale
+);
+```
+
+**Example**:
+
+```cpp
+int id = renderer.addObject("props/crate.obj", {0,0,0});
+renderer.setObjectScale("props/crate.obj", id, glm::vec3(2.0f)); // uniform
+renderer.setObjectScale("props/crate.obj", id, {1.0f, 2.0f, 0.5f}); // non-uniform
+```
+
+***
+
+### `setObjectTransform`
+
+Updates position, rotation, and scale in one call (more efficient).
+
+```cpp
+bool Renderer3D::setObjectTransform(
+    const std::string& modelPath,
+    int instanceId,
+    const glm::vec3& position,
+    const glm::vec3& rotation,
+    const glm::vec3& scale
+);
+```
+
+## Return Value
+
+All methods return:
+
+* `true` if the model and instance exist and the transform was updated,
+* `false` if `modelPath` is not loaded or `instanceId` is out of bounds.
+
+## Behavior Notes
+
+* The new transform is applied **starting from the next frame** (used in `cullAndSortObjects`).
+* Works **only on non-animated objects** (e.g., `.obj`). For skinned FBX models, vertex positions are driven by bones \u2014 these transforms are **ignored during animation**.
+
+## Usage in Game Loop
+
+```cpp
+// In initialization
+int playerModelId = renderer.addObject("characters/player.fbx", {0,0,0});
+
+// In update loop
+glm::vec3 newPos = playerPosition + movementInput;
+renderer.setObjectPosition("characters/player.fbx", playerModelId, newPos);
+```
+
+
+# Shader pipline
+
+
+
+The engine supports two rendering modes:
+
+1. **Single-pass rendering** (using one active shader),
+2. **Multi-pass post-processing pipeline** (chaining multiple shaders).
+
+***
+
+## Single Shader Mode (Default)
+
+### `setCurrentShader(const std::string& shaderName)`
+
+Sets the active shader for single-pass rendering.
+
+```cpp
+renderer.setCurrentShader("phong");
+```
+
+* Built-in shaders: `"simple"`, `"phong"`, `"pixelize"`.
+* Must be called **before rendering** if not using a pipeline.
+* Logs an error if the shader name is not found.
+
+***
+
+### `getCurrentShader() const`
+
+Returns the currently active shader (used in single-pass mode).
+
+```cpp
+auto current = renderer.getCurrentShader();
+if (current) {
+    // e.g., modify uniforms manually
+}
+```
+
+Returns `nullptr` if no shader is active.
+
+***
+
+### `getShader(const std::string& name) const`
+
+Retrieves a loaded shader by name (without activating it).
+
+```cpp
+auto pixelShader = renderer.getShader("pixelize");
+if () {
+    // Add to pipeline later
+}
+```
+
+***
+
+## Shader Pipeline (Multi-Pass Post-Processing)
+
+A **shader pipeline** is a sequence of shaders applied in order:
+
+* **Pass 0**: Renders 3D geometry to an off-screen framebuffer.
+* **Pass 1..N**: Each subsequent shader processes the output of the previous pass via a full-screen quad.
+
+> Only the **last shader** renders to the screen. Others render to framebuffers.
+
+### `addShaderToPipeline(std::shared_ptr<IShader> shader)`
+
+Appends a shader to the end of the current pipeline.
+
+```cpp
+auto pixelShader = renderer.getShader("pixelize");
+renderer.addShaderToPipeline(pixelShader);
+```
+
+> The first shader in the pipeline **must be a geometry shader** (e.g., `"phong"`). Post-processing shaders (e.g., `"pixelize"`) should come after.
+
+***
+
+### `setShaderPipeline(const std::vector<std::shared_ptr<IShader>>& pipeline)`
+
+Replaces the entire pipeline at once.
+
+```cpp
+std::vector<std::shared_ptr<IShader>> pipeline = {
+    renderer.getShader("phong"),
+    renderer.getShader("pixelize")
+};
+renderer.setShaderPipeline(pipeline);
+```
+
+* Clears any existing pipeline.
+* Automatically creates intermediate framebuffers.
+
+***
+
+### `getShaderPipeline() const`
+
+Returns a reference to the current pipeline.
+
+```cpp
+const auto& pipeline = renderer.getShaderPipeline();
+std::cout << "Pipeline length: " << pipeline.size() << "std::endl";
+```
+
+Useful for inspection or conditional logic.
+
+***
+
+### `removeShaderFromPipeline(const std::string& shaderName)`
+
+Removes **all occurrences** of a shader (by name) from the pipeline.
+
+```cpp
+renderer.removeShaderFromPipeline("pixelize"); // disables pixelation
+```
+
+Does nothing if the shader is not in the pipeline.
+
+***
+
+### `clearShaderPipeline()`
+
+Empties the entire pipeline.
+
+```cpp
+renderer.clearShaderPipeline(); // reverts to single-pass mode
+```
+
+After this, rendering uses `getCurrentShader()`.
+
+***
+
+## Rendering Behavior
+
+| Pipeline State                 | Rendering Behavior                                                                                                         |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| **Pipeline empty**             | Uses `getCurrentShader()` to render geometry directly to screen.                                                           |
+| **Pipeline has N ≥ 1 shaders** | Renders geometry with `pipeline[0]` → framebuffer,then applies `pipeline[1]` to `pipeline[N-1]` as post-processing passes. |
+
+> The engine **automatically manages framebuffers** and texture bindings between passes.
+
+***
+
+## Example: Enable Pixelation Effect
+
+```cpp
+// Use Phong for lighting + Pixelize as post-process
+renderer.setShaderPipeline({
+    renderer.getShader("phong"),
+    renderer.getShader("pixelize")
+});
+```
+
+## Example: Toggle Post-Processing
+
+```cpp
+bool postEnabled = true;
+
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
+    if (postEnabled) {
+        renderer.clearShaderPipeline();
+    } else {
+        renderer.setShaderPipeline({
+            renderer.getShader("phong"),
+            renderer.getShader("pixelize")
+        });
+    }
+    postEnabled = !postEnabled;
+}
+```
+
+> The `"simple"` shader is unlit and ignores materials — useful for debugging.
+> The `"pixelize"` shader expects a `screenTexture` uniform (automatically bound by the engine).
+
+
+# Animation
+
+
+
+The engine supports **skeletal animation** for FBX models. Animations are managed per object instance and controlled via the `Renderer3D` interface.
+
+> Only **FBX models** with embedded animation clips are supported. OBJ/MTL files do not support animation.
+
+***
+
+## Core Methods
+
+### `playAnimation(int objectId, const std::string& animName, bool loop = true)`
+
+Starts or switches to a named animation for a specific object instance.
+
+```cpp
+int robotId = renderer.addObject("characters/robot.fbx");
+renderer.playAnimation(robotId, "Walk", true);
+```
+
+* `objectId`: The instance ID returned by `addObject()` (must correspond to an FBX model).
+* `animName`: Exact name of the animation clip (case-sensitive).
+* `loop`: If `true`, the animation restarts when it ends.
+
+> If the animation name doesn't exist, nothing happens (no error is thrown).
+> If the object is already playing an animation, it is **replaced immediately**.
+
+***
+
+### `toggleAnimationLooping(int objectId, bool enable)`
+
+Enables or disables looping for the currently playing animation.
+
+```cpp
+renderer.toggleAnimationLooping(robotId, false); // play once
+```
+
+* Has no effect if no animation is playing on the object.
+
+***
+
+### `isAnimationLoopingEnabled(int objectId) const`
+
+Returns whether the current animation is set to loop.
+
+```cpp
+if (renderer.isAnimationLoopingEnabled(robotId)) {
+    // ...
+}
+```
+
+***
+
+### `getAnimationNames(int objectId) const`
+
+Returns a list of all available animation names for the model used by this instance.
+
+```cpp
+std::vector<std::string> anims = renderer.getAnimationNames(robotId);
+for (const auto& name : anims) {
+    std::cout << "Available animation: " << name << "std::endl";
+}
+```
+
+* Useful for UI or debugging.
+* Returns an empty vector if:
+  * The object doesn't exist,
+  * The model has no animations,
+  * The model is not FBX-based.
+
+***
+
+## Important Notes
+
+### Object Identification
+
+* `objectId` is the **instance index** returned by `addObject()` for a **specific model path**.
+* Animations are only created **if the FBX model contains skinning and animation clips**.
+* If you call `playAnimation` on a non-animated object (e.g., an `.obj`), it will **silently fail**.
+
+### Animation Playback
+
+* Time is tracked internally using **delta time** (from `std::chrono`).
+* Only **one animation** can play per object at a time.
+* Animation affects **vertex skinning** in the vertex shader via `uBones[]` uniforms.
+* Transform changes (via `setObjectPosition`, etc.) **do not affect skinned meshes** the skeleton drives the geometry.
+
+### Debug Tip
+
+To verify animations are loaded:
+
+```cpp
+auto names = renderer.getAnimationNames(id);
+assert(!names.empty()); // should list "Idle", "Walk", etc.
+```
+
+***
+
+## Example: Animation Controller
+
+```cpp
+int characterId = renderer.addObject("player.fbx", {0,0,0});
+
+// Play idle by default
+renderer.playAnimation(characterId, "Idle", true);
+
+// Switch based on input
+if (isWalking) {
+    renderer.playAnimation(characterId, "Walk", true);
+} else if (isAttacking) {
+    renderer.playAnimation(characterId, "Attack", false); // play once
+    if (!renderer.isAnimationLoopingEnabled(characterId)) {
+        // Optional: check if animation finished (not yet exposed)
+    }
+}
+```
+
+# Animation Control
+
+The engine supports **skeletal animation** for FBX models. Animations are managed per object instance and controlled via the `Renderer3D` interface.
+
+> 📌 Only **FBX models** with embedded animation clips are supported. OBJ/MTL files do not support animation.
+
+***
+
+## Core Methods
+
+### `playAnimation(int objectId, const std::string& animName, bool loop = true)`
+
+Starts or switches to a named animation for a specific object instance.
+
+```cpp
+int robotId = renderer.addObject("characters/robot.fbx");
+renderer.playAnimation(robotId, "Walk", true);
+```
+
+* `objectId`: The instance ID returned by `addObject()` (must correspond to an FBX model).
+* `animName`: Exact name of the animation clip (case-sensitive).
+* `loop`: If `true`, the animation restarts when it ends.
+
+> If the animation name doesn’t exist, nothing happens (no error is thrown).
+> If the object is already playing an animation, it is **replaced immediately**.
+
+***
+
+### `toggleAnimationLooping(int objectId, bool enable)`
+
+Enables or disables looping for the currently playing animation.
+
+```cpp
+renderer.toggleAnimationLooping(robotId, false); // play once
+```
+
+* Has no effect if no animation is playing on the object.
+
+***
+
+### `isAnimationLoopingEnabled(int objectId) const`
+
+Returns whether the current animation is set to loop.
+
+```cpp
+if (renderer.isAnimationLoopingEnabled(robotId)) {
+    // ...
+}
+```
+
+***
+
+### `getAnimationNames(int objectId) const`
+
+Returns a list of all available animation names for the model used by this instance.
+
+```cpp
+std::vector<std::string> anims = renderer.getAnimationNames(robotId);
+for (const auto& name : anims) {
+    std::cout << "Available animation: " << name << "std::endl";
+}
+```
+
+* Useful for UI or debugging.
+* Returns an empty vector if:
+  * The object doesn’t exist,
+  * The model has no animations,
+  * The model is not FBX-based.
+
+***
+
+## Important Notes
+
+### Object Identification
+
+* `objectId` is the **instance index** returned by `addObject()` for a **specific model path**.
+* Animations are only created **if the FBX model contains skinning and animation clips**.
+* If you call `playAnimation` on a non-animated object (e.g., an `.obj`), it will **silently fail**.
+
+### Animation Playback
+
+* Time is tracked internally using **delta time** (from `std::chrono`).
+* Only **one animation** can play per object at a time.
+* Animation affects **vertex skinning** in the vertex shader via `uBones[]` uniforms.
+* Transform changes (via `setObjectPosition`, etc.) **do not affect skinned meshes** — the skeleton drives the geometry.
+
+***
+
+## Example: Animation Controller
+
+```cpp
+int characterId = renderer.addObject("player.fbx", {0,0,0});
+
+// Play idle by default
+renderer.playAnimation(characterId, "Idle", true);
+
+// Switch based on input
+if (isWalking) {
+    renderer.playAnimation(characterId, "Walk", true);
+} else if (isAttacking) {
+    renderer.playAnimation(characterId, "Attack", false); // play once
+    if (!renderer.isAnimationLoopingEnabled(characterId)) {
+        // Optional: check if animation finished (not yet exposed)
+    }
+}
+```
+
+
+# work in progress here
+
