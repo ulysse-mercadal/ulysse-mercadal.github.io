@@ -26,8 +26,6 @@ This documentation covers the three core components of our implementation:
 
 ***
 
-# 3D Engine — Overview
-
 Our custom C++ 3D engine is built for real-time rendering in game-like applications. It emphasizes **modularity**, **debuggability**, and **cross-platform compatibility** (currently Linux-focused, but with Windows supported).
 
 ## Core Dependencies
@@ -962,5 +960,119 @@ if (isWalking) {
 
 
 
-# work in progress here
+# Protocol Overview
 
+
+
+***
+
+# Introduction to the R-Type Protocol
+
+The **R-Type Protocol** is a lightweight, modular network protocol designed to enable real-time multiplayer communication between a game client (specifically the **R-Type 3D** client) and a dedicated server.
+
+***
+
+## Goals
+
+The protocol was built with the following key objectives:
+
+* **Modularity & Reusability**: It is intentionally **decoupled from game logic**, making it adaptable to virtually any real-time multiplayer game—not just R-Type.
+* **Performance**: To minimize latency, the protocol uses **TCP only for the initial connection handshake**, then switches to **UDP for all gameplay data**, ensuring fast and efficient transmission.
+* **Bandwidth Efficiency**: Game data is packaged into compact binary **messages that may contain multiple instructions** (e.g., movement + shooting + state change) in a single packet, reducing overall network overhead.
+
+***
+
+## Communication Flow
+
+1. **Initial Connection (TCP)**
+   The client establishes a TCP connection to the server to perform a secure **handshake**: exchanging version info, authentication tokens, and receiving a unique session ID.
+
+2. **Gameplay Communication (UDP)**
+   After the session is validated, all real-time gameplay updates—such as player input, entity states, and events—are transmitted over **UDP**. This provides the low-latency responsiveness required for fast-paced action games.
+
+3. **Multiplexed Packets**
+   Each UDP packet can carry **one or more instructions**. This batching mechanism optimizes bandwidth usage and reduces packet count, which is crucial for maintaining smooth synchronization under varying network conditions.
+
+It contains **no hardcoded game logic**, allowing seamless integration into other game engines or genres (e.g., platformers, shooters, real-time strategy) with minimal adaptation.
+
+***
+
+## header and body
+
+the instruction are split in two main parts the header and the body. the header contains information about the instruction, the sender, and the body size. the body contains the additional information (name, positions, status...)
+
+This document serves as the foundation for the full R-Type Protocol specification. Subsequent sections will detail packet structures, supported instruction types, sequence numbering, and strategies for handling packet loss in UDP streams.
+
+
+# Packet Structure
+
+
+
+# Packet Structure
+
+The R-Type Protocol uses a **uniform binary packet format** for **all communication**, whether sent over **TCP** (e.g., during handshake or reliable control messages) or **UDP** (for real-time gameplay updates). This ensures consistency across transport layers while allowing the protocol to remain transport-agnostic at the message level.
+
+## General Rules
+
+* **Maximum size per packet**: **128 bytes** (including header and body).
+* A single packet may contain **one or more concatenated instructions**.
+* If the total data exceeds 128 bytes, it **must be split** into multiple packets.
+* Each **instruction** is self-contained and consists of a **2-byte header** + an optional **body** (0 to 126 bytes).
+* **Instruction bodies are optional**: some instructions have an empty body (`body length = 0`), while others carry structured game data.
+
+> **Note**: Even during the **TCP handshake phase**, messages follow this exact format. The transport layer (TCP vs. UDP) affects delivery guarantees and latency, **not** the message encoding.
+
+***
+
+## Instruction Format
+
+Each instruction starts with a **2-byte (16-bit) header**, followed by a body whose length is declared in the header.
+
+### Header Layout (2 bytes)
+
+| Bit(s) | Field          | Description                                                                                                      |
+| ------ | -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 15     | Direction      | `1` = Request (initiated by sender)`0` = Response (reply to a prior request)                                     |
+| 14-7   | Instruction ID | 8-bit unsigned integer (0–255) identifying the message type (e.g., `JOIN_REQUEST`, `PLAYER_INPUT`, `GAME_STATE`) |
+| 6-0    | Body Length    | 7-bit unsigned integer (0–126) indicating the size of the body **in bytes**                                      |
+
+> **Endianness**: The header is encoded in **big-endian** (network byte order).
+
+> The **body length does not include** the 2-byte header... well because a header is not a body :)
+
+#### Visual bit layout:
+
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |   | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+| - | - | - | - | - | - | - | - | - | - | -- | -- | -- | -- | -- | -- | -- |
+| D | I | I | I | I | I | I | I |   | I | L  | L  | L  | L  | L  | L  | L  |
+
+Where:
+
+* `D` = Direction bit (bit 15)
+* `I` = Instruction ID (8 bits -> max 255)
+* `L` = Body length (7 bits -> max 126)
+
+***
+
+## Usage Across Transports
+
+| Transport | Typical Use Case                                            | Packet Handling                                                                                                                                      |
+| --------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **TCP**   | Handshake, authentication, session setup, reliable commands | Packets are sent as a **stream**; the receiver must **frame** messages using the known 2-byte header + declared body length to delimit instructions. |
+| **UDP**   | Real-time gameplay (inputs, state updates)                  | Each datagram contains **one full packet** (≤128 bytes). Multiple instructions may be batched, but the entire datagram must fit in one UDP payload.  |
+
+> Because the same format is used on both transports, **serialization and parsing logic can be shared** between TCP and UDP code paths.
+
+***
+
+## Example
+
+A `EXAMPLE` instruction (ID = 42) with a 4-byte body sent as a **request**:
+
+* Direction = `1`
+* ID = `42` → binary `00101010`
+* Body length = `4` → binary `0000100`
+
+Header sended: `1001010100000100` = `0x9504`
+
+Followed by 4 bytes of input data.
