@@ -5,7 +5,7 @@
   "homepage": "https://ulysse-mercadal.github.io/ulysse-mercadal.github.io",
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
+    "deploy": "rm -rf out .next && next build && echo '' > out/.nojekyll && bun x gh-pages -d out --dotfiles",
     "start": "next start",
     "types:check": "fumadocs-mdx && tsc --noEmit",
     "postinstall": "fumadocs-mdx"
