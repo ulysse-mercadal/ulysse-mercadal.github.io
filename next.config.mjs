@@ -1,4 +1,4 @@
-import { createMDX } from "fumadocs-mdx/next";
+import { createMDX } from 'fumadocs-mdx/next';
 
 const withMDX = createMDX();
 const isProd = process.env.NODE_ENV === "production";
@@ -12,6 +12,12 @@ const config = {
   images: { unoptimized: true },
   basePath: isProd ? `/${repoName}` : "",
   assetPrefix: isProd ? `/${repoName}` : "",
+
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
 };
 
 export default withMDX(config);
