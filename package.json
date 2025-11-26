@@ -2,9 +2,10 @@
   "name": "r-type",
   "version": "0.0.0",
   "private": true,
-  "homepage": "https://ulysse-mercadal.github.io/r-type",
+  "homepage": "https://ulysse-mercadal.github.io/ulysse-mercadal.github.io",
   "scripts": {
     "build": "next build",
+    "deploy": "rm -rf out .next && next build && echo '' > out/.nojekyll && bun x gh-pages -d out --dotfiles",
     "dev": "next dev",
     "start": "next start",
     "types:check": "fumadocs-mdx && tsc --noEmit",
