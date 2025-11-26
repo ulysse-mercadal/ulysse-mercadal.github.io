@@ -2,6 +2,7 @@
   "name": "r-type",
   "version": "0.0.0",
   "private": true,
+  "homepage": "https://ulysse-mercadal.github.io/ulysse-mercadal.github.io",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
@@ -24,6 +25,7 @@
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "gh-pages": "^6.3.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3"
