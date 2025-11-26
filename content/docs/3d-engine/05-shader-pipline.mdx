@@ -1,0 +1,171 @@
+---
+title: Shader pipline
+description: Apply shaders to the render
+---
+
+The engine supports two rendering modes:
+1. **Single-pass rendering** (using one active shader),
+2. **Multi-pass post-processing pipeline** (chaining multiple shaders).
+
+---
+
+## Single Shader Mode (Default)
+
+### `setCurrentShader(const std::string& shaderName)`
+
+Sets the active shader for single-pass rendering.
+
+```cpp
+renderer.setCurrentShader("phong");
+```
+
+- Built-in shaders: `"simple"`, `"phong"`, `"pixelize"`.
+- Must be called **before rendering** if not using a pipeline.
+- Logs an error if the shader name is not found.
+
+---
+
+### `getCurrentShader() const`
+
+Returns the currently active shader (used in single-pass mode).
+
+```cpp
+auto current = renderer.getCurrentShader();
+if (current) {
+    // e.g., modify uniforms manually
+}
+```
+
+Returns `nullptr` if no shader is active.
+
+---
+
+### `getShader(const std::string& name) const`
+
+Retrieves a loaded shader by name (without activating it).
+
+```cpp
+auto pixelShader = renderer.getShader("pixelize");
+if () {
+    // Add to pipeline later
+}
+```
+
+---
+
+## Shader Pipeline (Multi-Pass Post-Processing)
+
+A **shader pipeline** is a sequence of shaders applied in order:
+- **Pass 0**: Renders 3D geometry to an off-screen framebuffer.
+- **Pass 1..N**: Each subsequent shader processes the output of the previous pass via a full-screen quad.
+
+> Only the **last shader** renders to the screen. Others render to framebuffers.
+
+### `addShaderToPipeline(std::shared_ptr<IShader> shader)`
+
+Appends a shader to the end of the current pipeline.
+
+```cpp
+auto pixelShader = renderer.getShader("pixelize");
+renderer.addShaderToPipeline(pixelShader);
+```
+
+> The first shader in the pipeline **must be a geometry shader** (e.g., `"phong"`). Post-processing shaders (e.g., `"pixelize"`) should come after.
+
+---
+
+### `setShaderPipeline(const std::vector<std::shared_ptr<IShader>>& pipeline)`
+
+Replaces the entire pipeline at once.
+
+```cpp
+std::vector<std::shared_ptr<IShader>> pipeline = {
+    renderer.getShader("phong"),
+    renderer.getShader("pixelize")
+};
+renderer.setShaderPipeline(pipeline);
+```
+
+- Clears any existing pipeline.
+- Automatically creates intermediate framebuffers.
+
+---
+
+### `getShaderPipeline() const`
+
+Returns a reference to the current pipeline.
+
+```cpp
+const auto& pipeline = renderer.getShaderPipeline();
+std::cout << "Pipeline length: " << pipeline.size() << "std::endl";
+```
+
+Useful for inspection or conditional logic.
+
+---
+
+### `removeShaderFromPipeline(const std::string& shaderName)`
+
+Removes **all occurrences** of a shader (by name) from the pipeline.
+
+```cpp
+renderer.removeShaderFromPipeline("pixelize"); // disables pixelation
+```
+
+Does nothing if the shader is not in the pipeline.
+
+---
+
+### `clearShaderPipeline()`
+
+Empties the entire pipeline.
+
+```cpp
+renderer.clearShaderPipeline(); // reverts to single-pass mode
+```
+
+After this, rendering uses `getCurrentShader()`.
+
+---
+
+## Rendering Behavior
+
+| Pipeline State                 | Rendering Behavior                                     |
+|--------------------------------|--------------------------------------------------------|
+| **Pipeline empty**             | Uses `getCurrentShader()` to render geometry directly to screen. |
+| **Pipeline has N ≥ 1 shaders** | Renders geometry with `pipeline[0]` → framebuffer,then applies `pipeline[1]` to `pipeline[N-1]` as post-processing passes. |
+
+> The engine **automatically manages framebuffers** and texture bindings between passes.
+
+---
+
+## Example: Enable Pixelation Effect
+
+```cpp
+// Use Phong for lighting + Pixelize as post-process
+renderer.setShaderPipeline({
+    renderer.getShader("phong"),
+    renderer.getShader("pixelize")
+});
+```
+
+## Example: Toggle Post-Processing
+
+```cpp
+bool postEnabled = true;
+
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
+    if (postEnabled) {
+        renderer.clearShaderPipeline();
+    } else {
+        renderer.setShaderPipeline({
+            renderer.getShader("phong"),
+            renderer.getShader("pixelize")
+        });
+    }
+    postEnabled = !postEnabled;
+}
+```
+
+> The `"simple"` shader is unlit and ignores materials — useful for debugging.
+> The `"pixelize"` shader expects a `screenTexture` uniform (automatically bound by the engine).

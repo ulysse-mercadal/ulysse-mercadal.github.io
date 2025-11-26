@@ -1,0 +1,218 @@
+---
+title: Animation
+description: Animate a fbx file
+---
+
+The engine supports **skeletal animation** for FBX models. Animations are managed per object instance and controlled via the `Renderer3D` interface.
+
+> Only **FBX models** with embedded animation clips are supported. OBJ/MTL files do not support animation.
+
+---
+
+## Core Methods
+
+### `playAnimation(int objectId, const std::string& animName, bool loop = true)`
+
+Starts or switches to a named animation for a specific object instance.
+
+```cpp
+int robotId = renderer.addObject("characters/robot.fbx");
+renderer.playAnimation(robotId, "Walk", true);
+```
+
+- `objectId`: The instance ID returned by `addObject()` (must correspond to an FBX model).
+- `animName`: Exact name of the animation clip (case-sensitive).
+- `loop`: If `true`, the animation restarts when it ends.
+
+> If the animation name doesn't exist, nothing happens (no error is thrown).
+> If the object is already playing an animation, it is **replaced immediately**.
+
+---
+
+### `toggleAnimationLooping(int objectId, bool enable)`
+
+Enables or disables looping for the currently playing animation.
+
+```cpp
+renderer.toggleAnimationLooping(robotId, false); // play once
+```
+
+- Has no effect if no animation is playing on the object.
+
+---
+
+### `isAnimationLoopingEnabled(int objectId) const`
+
+Returns whether the current animation is set to loop.
+
+```cpp
+if (renderer.isAnimationLoopingEnabled(robotId)) {
+    // ...
+}
+```
+
+---
+
+### `getAnimationNames(int objectId) const`
+
+Returns a list of all available animation names for the model used by this instance.
+
+```cpp
+std::vector<std::string> anims = renderer.getAnimationNames(robotId);
+for (const auto& name : anims) {
+    std::cout << "Available animation: " << name << "std::endl";
+}
+```
+
+- Useful for UI or debugging.
+- Returns an empty vector if:
+  - The object doesn't exist,
+  - The model has no animations,
+  - The model is not FBX-based.
+
+---
+
+## Important Notes
+
+### Object Identification
+- `objectId` is the **instance index** returned by `addObject()` for a **specific model path**.
+- Animations are only created **if the FBX model contains skinning and animation clips**.
+- If you call `playAnimation` on a non-animated object (e.g., an `.obj`), it will **silently fail**.
+
+### Animation Playback
+- Time is tracked internally using **delta time** (from `std::chrono`).
+- Only **one animation** can play per object at a time.
+- Animation affects **vertex skinning** in the vertex shader via `uBones[]` uniforms.
+- Transform changes (via `setObjectPosition`, etc.) **do not affect skinned meshes** the skeleton drives the geometry.
+
+### Debug Tip
+To verify animations are loaded:
+```cpp
+auto names = renderer.getAnimationNames(id);
+assert(!names.empty()); // should list "Idle", "Walk", etc.
+```
+
+---
+
+## Example: Animation Controller
+
+```cpp
+int characterId = renderer.addObject("player.fbx", {0,0,0});
+
+// Play idle by default
+renderer.playAnimation(characterId, "Idle", true);
+
+// Switch based on input
+if (isWalking) {
+    renderer.playAnimation(characterId, "Walk", true);
+} else if (isAttacking) {
+    renderer.playAnimation(characterId, "Attack", false); // play once
+    if (!renderer.isAnimationLoopingEnabled(characterId)) {
+        // Optional: check if animation finished (not yet exposed)
+    }
+}
+``````
+# Animation Control
+
+The engine supports **skeletal animation** for FBX models. Animations are managed per object instance and controlled via the `Renderer3D` interface.
+
+> 📌 Only **FBX models** with embedded animation clips are supported. OBJ/MTL files do not support animation.
+
+---
+
+## Core Methods
+
+### `playAnimation(int objectId, const std::string& animName, bool loop = true)`
+
+Starts or switches to a named animation for a specific object instance.
+
+```cpp
+int robotId = renderer.addObject("characters/robot.fbx");
+renderer.playAnimation(robotId, "Walk", true);
+```
+
+- `objectId`: The instance ID returned by `addObject()` (must correspond to an FBX model).
+- `animName`: Exact name of the animation clip (case-sensitive).
+- `loop`: If `true`, the animation restarts when it ends.
+
+> If the animation name doesn’t exist, nothing happens (no error is thrown).
+> If the object is already playing an animation, it is **replaced immediately**.
+
+---
+
+### `toggleAnimationLooping(int objectId, bool enable)`
+
+Enables or disables looping for the currently playing animation.
+
+```cpp
+renderer.toggleAnimationLooping(robotId, false); // play once
+```
+
+- Has no effect if no animation is playing on the object.
+
+---
+
+### `isAnimationLoopingEnabled(int objectId) const`
+
+Returns whether the current animation is set to loop.
+
+```cpp
+if (renderer.isAnimationLoopingEnabled(robotId)) {
+    // ...
+}
+```
+
+---
+
+### `getAnimationNames(int objectId) const`
+
+Returns a list of all available animation names for the model used by this instance.
+
+```cpp
+std::vector<std::string> anims = renderer.getAnimationNames(robotId);
+for (const auto& name : anims) {
+    std::cout << "Available animation: " << name << "std::endl";
+}
+```
+
+- Useful for UI or debugging.
+- Returns an empty vector if:
+  - The object doesn’t exist,
+  - The model has no animations,
+  - The model is not FBX-based.
+
+---
+
+## Important Notes
+
+### Object Identification
+- `objectId` is the **instance index** returned by `addObject()` for a **specific model path**.
+- Animations are only created **if the FBX model contains skinning and animation clips**.
+- If you call `playAnimation` on a non-animated object (e.g., an `.obj`), it will **silently fail**.
+
+### Animation Playback
+- Time is tracked internally using **delta time** (from `std::chrono`).
+- Only **one animation** can play per object at a time.
+- Animation affects **vertex skinning** in the vertex shader via `uBones[]` uniforms.
+- Transform changes (via `setObjectPosition`, etc.) **do not affect skinned meshes** — the skeleton drives the geometry.
+
+---
+
+## Example: Animation Controller
+
+```cpp
+int characterId = renderer.addObject("player.fbx", {0,0,0});
+
+// Play idle by default
+renderer.playAnimation(characterId, "Idle", true);
+
+// Switch based on input
+if (isWalking) {
+    renderer.playAnimation(characterId, "Walk", true);
+} else if (isAttacking) {
+    renderer.playAnimation(characterId, "Attack", false); // play once
+    if (!renderer.isAnimationLoopingEnabled(characterId)) {
+        // Optional: check if animation finished (not yet exposed)
+    }
+}
+```

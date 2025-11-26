@@ -1,0 +1,151 @@
+---
+title: Setup viewport
+description: Innitialize viewport and update it.
+---
+
+The 3D engine follows a standard **init → update → render** loop. These three methods form the backbone of the rendering pipeline.
+
+---
+
+## `initialize()`
+
+```cpp
+bool Renderer3D::initialize();
+```
+
+### Purpose
+Initializes all subsystems required for rendering:
+- OpenGL context (via GLEW),
+- Built-in shaders (`simple`, `phong`, `pixelize`),
+- Framebuffer pipeline,
+- OpenGL render states (depth test, culling, blending).
+
+### Usage
+Call **once** at application startup, after OpenGL context creation.
+
+```cpp
+Renderer3D renderer;
+if (!renderer.initialize()) {
+    // handle initialization errors
+}
+```
+
+### Return Value
+- `true` on success,
+- `false` if any subsystem fails (e.g., shader compilation error).
+
+> Must be called before `addObject()`, `update()`, or `render()` it should be the **FIRST** thing happening in the viewport setup.
+
+---
+
+## `update()`
+
+```cpp
+void Renderer3D::update(const Camera& camera, float width, float height);
+```
+
+### Purpose
+Prepares the scene for rendering by:
+1. Updating skeletal animations (using delta time),
+2. Rebuilding the list of visible objects (`_renderBatches`),
+3. Performing frustum culling (based on camera view),
+4. Sorting opaque and transparent objects,
+5. Computing view and projection matrices.
+
+### Parameters
+- `camera`: Contains position and orientation (see camera documentation page for more info).
+- `width`, `height`: Viewport dimensions (used for aspect ratio in projection matrix).
+
+### Usage
+Call **once per frame**, before `render()`.
+
+```cpp
+Camera cam;
+// ... update camera position ...
+renderer.update(cam, windowWidth, windowHeight);
+```
+
+> Internally computes delta time using `std::chrono` for smooth animation.
+
+---
+
+## `render()`
+
+```cpp
+void Renderer3D::render(const Camera& camera);
+```
+
+### Purpose
+Draws the scene using the current render batches and active shader(s). Supports:
+- Single-pass rendering (with `_currentShader`),
+- Multi-pass post-processing pipeline (via `_shaderPipeline`),
+- Transparent object blending (sorted back-to-front),
+- Skeletal animation (bone matrices uploaded per batch).
+
+### Behavior
+1. Binds framebuffers if a shader pipeline is active,
+2. Renders geometry with correct materials and transforms,
+3. Applies post-processing passes (e.g., pixelation) via full-screen quads,
+4. Resets OpenGL state (`glBindVertexArray(0)`, `glUseProgram(0)`, etc.).
+
+### Usage
+Call **once per frame**, immediately after `update()`.
+
+```cpp
+renderer.render(cam);
+```
+
+> If `_shaderPipeline` is empty, uses `_currentShader`.
+
+> Transparent materials are rendered after opaque ones with depth masking disabled.
+
+---
+
+## Typical Frame Loop
+
+```cpp
+// Initialization (once)
+Renderer3D renderer;
+renderer.initialize();
+int objId = renderer.addObject("assets/indien-qui-danse.fbx");
+
+// Per-frame loop
+while (window.isOpen()) {
+    glViewport(0, 0, windowSize.x, windowSize.y);
+
+    Camera cam = getPlayerCamera();
+    int width = window.getSize().x;
+    int height = window.getSize().y;
+
+    renderer.update(camera, windowSize.x, windowSize.y);      // ← Prepare batches + animations
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    renderer.render(camera);                                  // ← Draw everything
+    window.pushGLStates();
+    sf::View sfmlView = window.getDefaultView();
+    window.setView(sfmlView);
+    window.draw(centerDot);
+    window.popGLStates();
+    window.display();
+}
+```
+
+> The engine **does not manage the window or input** — it only handles 3D rendering logic.
+
+using SFML you should create the window as it follows
+
+```cpp
+sf::ContextSettings settings;
+settings.depthBits = 24;
+settings.stencilBits = 8;
+settings.antialiasingLevel = 4;
+
+sf::RenderWindow window;
+window.create(sf::VideoMode(1920, 1080), "RTYPE - 3d engine", sf::Style::Default, settings);
+window.setFramerateLimit(60);
+window.setVerticalSyncEnabled(true);
+window.setActive(true);
+
+glEnable(GL_DEPTH_TEST);
+glDisable(GL_CULL_FACE);
+glClearColor(0.2f, 0.2f, 0.4f, 1.0f);   // purplish color
+```

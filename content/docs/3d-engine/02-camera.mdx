@@ -1,0 +1,107 @@
+---
+title: Camera managment
+description: control the camera
+---
+
+The `Camera` class provides a navigation system with movement and rotation controls. It maintains position, orientation (yaw/pitch), and computes the view matrix for rendering.
+
+## Core Interface
+
+### Movement
+
+```cpp
+void Camera::move(float forward, float right, float up, float speed);
+```
+
+Moves the camera in local space:
+- `forward`: +1 = move forward (along camera look direction)
+- `right`: +1 = strafe right (perpendicular to look and up)
+- `up`: +1 = move upward (world Y-axis)
+- `speed`: scalar multiplier (e.g., `0.1f` per frame)
+
+> Movement respects current rotation pressing key binded to the forward + 1 always moves in the direction the camera is facing.
+
+### Rotation
+
+```cpp
+void Camera::rotate(float pitchDelta, float yawDelta);
+```
+
+Rotates the camera using Euler angles:
+- `pitchDelta`: vertical rotation (in **degrees**), clamped to 89
+- `yawDelta`: horizontal rotation (in **degrees**), unbounded (360 wrap)
+
+> Rotation follows classic FPS behavior: mouse X \u2192 yaw, mouse Y \u2192 pitch.
+
+---
+
+## Usage Example (SFML Input)
+
+```cpp
+float speed = 0.1f;
+float rotSpeed = 1.0f; // degrees per frame
+
+// Movement (WASD + E/Q for vertical)
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+    camera.move(1, 0, 0, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+    camera.move(-1, 0, 0, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+    camera.move(0, -1, 0, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+    camera.move(0, 1, 0, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+    camera.move(0, 0, 1, speed);
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+    camera.move(0, 0, -1, speed);
+
+// Rotation (arrow keys)
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+    camera.rotate(0, rotSpeed);      // yaw right
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+    camera.rotate(0, -rotSpeed);     // yaw left
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+    camera.rotate(rotSpeed, 0);      // pitch down
+if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+    camera.rotate(-rotSpeed, 0);     // pitch up
+```
+
+> **Note**: In a final game, you typically use **mouse delta** for rotation instead of arrow keys.
+
+> yes this exemple is for a qwerty Keyboard, maybe because it's supperior to azerty for coding :)
+
+---
+
+## Accessing Camera State
+
+```cpp
+const glm::vec3& Camera::getPosition() const;
+const glm::vec3& Camera::getFront() const;     // normalized look direction
+const glm::vec3& Camera::getUp() const;        // world up (usually (0,1,0))
+const glm::vec3& Camera::getRight() const;     // right vector (computed)
+
+glm::mat4 Camera::getViewMatrix() const;       // ready for shader uniform
+```
+
+These are used internally by `Renderer3D::update()` and `render()`.
+
+---
+
+## Important Notes
+
+- **Pitch is clamped** to [-89, 89] to prevent gimbal lock and upside-down view.
+- **Yaw is unbounded** it accumulates over time (e.g., 720 = two full turns).
+- All rotation inputs are expected in **degrees**, not radians.
+
+---
+
+## Integration with Renderer
+
+Pass the camera directly to the renderer each frame:
+
+```cpp
+renderer.update(camera, windowWidth, windowHeight);
+renderer.render(camera);
+```
+
+The renderer uses `camera.getViewMatrix()` and `camera.getFront()` for culling and lighting.

@@ -1,0 +1,35 @@
+---
+title: 3D Engine Overview
+navigation:
+    next: /3d-engine/add-an-object
+    previous: /index.mdx
+---
+
+---
+
+# 3D Engine — Overview
+
+Our custom C++ 3D engine is built for real-time rendering in game-like applications. It emphasizes **modularity**, **debuggability**, and **cross-platform compatibility** (currently Linux-focused, but with Windows supported).
+
+## Core Dependencies
+
+- **[OpenGL 4.6+](https://www.khronos.org/opengl/)** – Programmable rendering pipeline
+- **[GLM](https://github.com/g-truc/glm)** – Mathematics (vectors, matrices, quaternions)
+- **[Assimp](https://www.assimp.org/)** – Model parsing (`.fbx`, `.obj`; `.glTF` planned)
+- **[stb_image](https://github.com/nothings/stb)** – Texture loading (PNG, JPG, TGA, etc.)
+- **[GLFW](https://www.glfw.org/) + [GLEW](http://glew.sourceforge.net/)** – Window creation and OpenGL context/extension management
+- **[CMake](https://cmake.org/)** – Build system (Linux-native workflow with `FetchContent`)
+
+
+To compile the game engine, just use our CMake, it will fetch our Dependencies by itself
+
+---
+
+## Key Features
+
+- Entity-based scene graph (`GameObject` system)
+- Full transform control (position, rotation, scale)
+- Shader pipeline with uniform binding abstraction
+- Skeletal animation support (`.FBX` only, `.GLTF` in the future)
+- Material and texture system with debug validation
+- Scene-level resource management

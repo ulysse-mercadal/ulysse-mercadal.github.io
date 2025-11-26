@@ -1,0 +1,105 @@
+---
+title: Add an object
+description: Add an object to the viewport
+---
+
+Adds a 3D model to the scene and returns a unique instance ID for transformation, animation, or removal.
+
+---
+
+## Signature
+
+```cpp
+int Renderer3D::addObject(
+    const std::string& modelPath,
+    const glm::vec3& position = glm::vec3(0.0f),
+    const glm::vec3& rotation = glm::vec3(0.0f),
+    const glm::vec3& scale = glm::vec3(1.0f)
+);
+```
+
+---
+
+## Parameters
+
+| Parameter     | Type               | Description |
+|---------------|--------------------|-------------|
+| `modelPath`   | `const std::string&` | Path to the model file (supports `.obj` and `.fbx`). Relative to the working directory. |
+| `position`    | `glm::vec3`        | World-space position of the object (default: origin). |
+| `rotation`    | `glm::vec3`        | Euler rotation in **radians** (XYZ or YXZ convention, depending on your `Transform` class). |
+| `scale`       | `glm::vec3`        | Local scale (default: uniform scale of 1). |
+
+> The rotation is applied as: `R = R_x * R_y * R_z` (intrinsic Tait-Bryan angles), consistent with your `Transform::getMatrix()` implementation.
+
+---
+
+## Return Value
+
+- **`int`**: A non-negative instance ID if successful.
+- **`-1`**: If the renderer is not initialized, the file extension is unsupported, or parsing fails.
+
+> The ID is **per-model cache**, not globally unique across all models. It represents the index of the instance **within its model instance list**, to make it ecs compiliant you have to identify the object by it's cachekey (it's his file path) and his specific id.
+
+---
+
+## Behavior
+
+1. **Caching**:
+   If the model at `modelPath` has never been loaded, it is:
+   - Parsed via `ObjParser` (`.obj`) or `FbxParser` (`.fbx`),
+   - Converted into internal `Vertex`, `Material`, and (if animated) `Bone` data,
+   - Uploaded to GPU (VAO/VBO),
+   - Stored in an internal `Cache` keyed by path.
+
+2. **Instancing**:
+   A new `InstanceData` is appended to the cache instance list, containing:
+   - The provided `Transform`,
+   - A default `materialIndex` of `0`.
+
+3. **Animation (FBX only)**:
+   If the model has skinning (`model.hasSkinning == true`) and contains animations:
+   - An `Animator` is created,
+   - The **first animation** in the list is played automatically,
+   - The animator is stored in `_animators` using the instance ID.
+
+---
+
+## Examples
+
+### Load a static OBJ model
+```cpp
+int id = renderer.addObject(
+    "assets/crate.obj",
+    {0, 0, -5});
+
+if (id == -1) {
+    // handle loading errors
+}
+```
+
+### Load an animated FBX character
+```cpp
+int robotId = renderer.addObject(
+    "assets/robot.fbx",
+    {2.0f, 0.0f, -3.0f},
+    {0.0f, glm::radians(90.0f), 0.0f}, // rotate to face camera
+    {1.5f} // scale up
+);
+// If FBX contains animations, the first one starts playing automatically.
+```
+
+---
+
+## See Also
+
+- `removeAllObjects()` Clear all instances.
+    ```cpp
+    void removeAllObjects();
+    ```
+
+- `getObjectCount()` Get all object count in renderer
+    ```cpp
+    size_t getObjectCount() const;
+    ```
+
+> to see this object in the viewport you are must use at least one shader, learn more in the shader pipline doc page

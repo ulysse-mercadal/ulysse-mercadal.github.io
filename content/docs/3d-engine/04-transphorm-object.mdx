@@ -1,0 +1,117 @@
+---
+title: Transform an object
+description: Transform an object on the viewport
+---
+
+After creating an object with `addObject()`, you can dynamically update its position, rotation, or scale using the following public methods.
+
+---
+
+## Object Identification
+
+Because object IDs are **local to each model**, you must always specify:
+- `modelPath`: the exact path used in `addObject()` (e.g., `"assets/indien-qui-danse.fbx"`),
+- `instanceId`: the integer returned by `addObject()`.
+
+> The pair `(modelPath, instanceId)` uniquely identifies an instance.
+
+---
+
+## Available Methods
+
+### `setObjectPosition`
+
+Sets the world-space position of an instance.
+
+```cpp
+bool Renderer3D::setObjectPosition(
+    const std::string& modelPath,
+    int instanceId,
+    const glm::vec3& position
+);
+```
+
+**Example**:
+```cpp
+int id = renderer.addObject("props/crate.obj", {0,0,0});
+renderer.setObjectPosition("props/crate.obj", id, {5.0f, 1.0f, -3.0f});
+```
+
+---
+
+### `setObjectRotation`
+
+Sets absolute Euler rotation in **radians** (YXZ convention).
+
+```cpp
+bool Renderer3D::setObjectRotation(
+    const std::string& modelPath,
+    int instanceId,
+    const glm::vec3& rotation
+);
+```
+
+**Example**:
+```cpp
+int id = renderer.addObject("props/crate.obj", {0,0,0});
+renderer.setObjectRotation("props/crate.obj", id, {0.0f, glm::radians(90.0f), 0.0f});
+```
+
+---
+
+### `setObjectScale`
+
+Sets local scale per axis (or uniform if using `glm::vec3(s)`).
+
+```cpp
+bool Renderer3D::setObjectScale(
+    const std::string& modelPath,
+    int instanceId,
+    const glm::vec3& scale
+);
+```
+
+**Example**:
+```cpp
+int id = renderer.addObject("props/crate.obj", {0,0,0});
+renderer.setObjectScale("props/crate.obj", id, glm::vec3(2.0f)); // uniform
+renderer.setObjectScale("props/crate.obj", id, {1.0f, 2.0f, 0.5f}); // non-uniform
+```
+
+---
+
+### `setObjectTransform`
+
+Updates position, rotation, and scale in one call (more efficient).
+
+```cpp
+bool Renderer3D::setObjectTransform(
+    const std::string& modelPath,
+    int instanceId,
+    const glm::vec3& position,
+    const glm::vec3& rotation,
+    const glm::vec3& scale
+);
+```
+
+## Return Value
+
+All methods return:
+- `true` if the model and instance exist and the transform was updated,
+- `false` if `modelPath` is not loaded or `instanceId` is out of bounds.
+
+## Behavior Notes
+
+- The new transform is applied **starting from the next frame** (used in `cullAndSortObjects`).
+- Works **only on non-animated objects** (e.g., `.obj`). For skinned FBX models, vertex positions are driven by bones \u2014 these transforms are **ignored during animation**.
+
+## Usage in Game Loop
+
+```cpp
+// In initialization
+int playerModelId = renderer.addObject("characters/player.fbx", {0,0,0});
+
+// In update loop
+glm::vec3 newPos = playerPosition + movementInput;
+renderer.setObjectPosition("characters/player.fbx", playerModelId, newPos);
+```
