@@ -1004,6 +1004,44 @@ the instruction are split in two main parts the header and the body. the header 
 This document serves as the foundation for the full R-Type Protocol specification. Subsequent sections will detail packet structures, supported instruction types, sequence numbering, and strategies for handling packet loss in UDP streams.
 
 
+# Instruction list
+
+
+
+***
+
+# Protocol Commands
+
+Each message in the R-Type Protocol is identified by an 8-bit **instruction ID**. The same ID may be used for related actions (e.g., client request and server broadcast), and the exact meaning is determined by the header. Below is the complete list of supported commands.
+
+> * All commands respect the **128-byte packet limit**. Large payloads (e.g., long messages) must be split across multiple packets.
+
+> * The same instruction ID is used for both **requests** and **notifications/responses**
+
+| ID   | Name            | protocol | Description                                                                               |   Broadcast  |
+| ---- | --------------- | :------: | ----------------------------------------------------------------------------------------- | :----------: |
+| 0x00 | `CONNECTION`    |   `TCP`  | Initiates connection with the server.                                                     |     `no`     |
+| 0x01 | `DISCONNECTION` |   `TCP`  | Signals disconnection from the server. may trigger a `LEAVE_LOBBY` if player in game      |     `no`     |
+| 0x02 | `JOIN_LOBBY`    |   `TCP`  | Request or signal a new player in the lobby, The server replies with the new player list. |     `yes`    |
+| 0x03 | `LEAVE_LOBBY`   |   `TCP`  | Request to leave the current lobby.                                                       |     `yes`    |
+| 0x04 | `READY`         |   `TCP`  | Change a player’s readiness state in the lobby.                                           |     `yes`    |
+| 0x05 | `START_GAME`    |   `TCP`  | Ask or notify the match is begining.                                                      |     `yes`    |
+| 0x06 | `GAME_LOADED`   |   `TCP`  | Sent once local assets are loaded. Server waits before sending `GAME_START`.              |     `no`     |
+| 0x07 | `GAME_START`    |   `TCP`  | Final signal from the server that the game loop is starting.                              |     `yes`    |
+| 0x08 | `PAUSE`         |   `UDP`  | Update game pause state.                                                                  |     `yes`    |
+| 0x09 | `WIN`           |   `UDP`  | Notifies victory                                                                          |     `yes`    |
+| 0x10 | `LOSE`          |   `UDP`  | Notifies defeat                                                                           |     `yes`    |
+| 0x11 | `DEAD`          |   `UDP`  | Notifies that a player or entity has been destroyed.                                      |     `yes`    |
+| 0x12 | `INPUT`         |   `UDP`  | Reports a player input action, identified by a key for more modularity.                   |     `yes`    |
+| 0x13 | `MOVE`          |   `UDP`  | Updates a player’s position in 3D space (`x, y, z`).                                      |     `yes`    |
+| 0x14 | `SET_POSITION`  |   `UDP`  | Forces an absolute position update.                                                       |     `yes`    |
+| 0x15 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of entities.                                                 |     `no`     |
+| 0x16 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                     | `no` / `yes` |
+| 0x17 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                 |     `yes`    |
+| 0x18 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                 |     `no`     |
+| 0x19 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                      |     `yes`    |
+
+
 # Packet Structure
 
 
