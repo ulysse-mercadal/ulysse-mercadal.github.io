@@ -1,0 +1,55 @@
+---
+title: 0x02 - Get Lobby
+description: Request or give the list of available lobbies.
+---
+
+# Get Lobby (ID 2)
+
+This command is used to **request the list of active lobbies** from the server, or for the server to **respond with that list**. Each lobby entry includes its name and current player count.
+
+> **This command must be sent over TCP.**
+
+---
+
+## Client → Server
+
+### Context
+The client requests the full list of available lobbies (e.g., for a matchmaking menu).
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `01`      | `00010` | `000000000` |
+
+**Raw header bytes:** `0x44 0x00`
+*(Binary: `01 00010 000000000` → `01000100 00000000`)*
+
+### Body
+None.
+
+---
+
+## Server → Client
+
+### Context
+The server sends the current list of lobbies in response to a `GET_LOBBY` request.
+
+### Header
+| Direction | Code    | Body Length |
+|:---------:|:-------:|:-----------:|
+| `00`      | `00010` | *N\*(M + 3)*      |
+
+Where *N* is the total size of the lobby list.
+
+Where *M* is the total size of the lobby name.
+
+### Body
+
+The body is a **concatenated list of lobby entries**. Each entry has the following layout:
+
+| Offset | Size (bytes) | Type     | Content                     |
+|:------:|:------------:|:--------:|-----------------------------|
+| 0      | 3            | `int`    | player number |
+| 1      | *M*          | `string` | UTF-8 lobby name  |
+
+> - If no lobbies exist, the body is **empty** (*N* = 0).
