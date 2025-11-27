@@ -133,7 +133,7 @@ After this, rendering uses `getCurrentShader()`.
 | Pipeline State                 | Rendering Behavior                                     |
 |--------------------------------|--------------------------------------------------------|
 | **Pipeline empty**             | Uses `getCurrentShader()` to render geometry directly to screen. |
-| **Pipeline has N ≥ 1 shaders** | Renders geometry with `pipeline[0]` → framebuffer,then applies `pipeline[1]` to `pipeline[N-1]` as post-processing passes. |
+| **Pipeline has N ≥ 1 shaders** | Renders geometry with `pipeline[0]` -> framebuffer,then applies `pipeline[1]` to `pipeline[N-1]` as post-processing passes. |
 
 > The engine **automatically manages framebuffers** and texture bindings between passes.
 

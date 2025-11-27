@@ -40,9 +40,9 @@ Each command starts with a **2-byte (16-bit) header**, followed by a body whose 
 |D|D|I|I|I|I|I|L| |L|L|L|L|L|L|L|L|
 
 Where:
-- `D` = Direction (2 bits → 4 possible values)
-- `I` = command ID (5 bits → max 31)
-- `L` = Body length (9 bits → max 511,)
+- `D` = Direction (2 bits -> 4 possible values)
+- `I` = command ID (5 bits -> max 31)
+- `L` = Body length (9 bits -> max 511,)
 ---
 
 ## Usage Across Transports
@@ -60,11 +60,11 @@ Where:
 
 An `EXAMPLE` command (ID = 10) with a 4-byte body sent with direction code `01`:
 - Direction = `01`
-- ID = `10` → binary `01010`
-- Body length = `4` → binary `000000100`
+- ID = `10` -> binary `01010`
+- Body length = `4` -> binary `000000100`
 
 Full 16-bit header (big-endian):
-`01 01010 000000100` → grouped as two bytes:
+`01 01010 000000100` -> grouped as two bytes:
 - Byte 0: `01010100` = `0x54`
 - Byte 1: `00000100` = `0x04`
 
