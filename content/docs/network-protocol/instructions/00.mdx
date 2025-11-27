@@ -21,8 +21,9 @@ The client attempts to connect to the server and declares the protocol version i
 |:--------------:|:---------:|:----------------:|
 | `01`           | `00000`   | `000000001`      |
 
-**Raw header bytes (big-endian):** `0x40 0x01`
-*(Binary: `01 00000 000000001`, split as `01000000 00000001`)*
+**Raw header bytes:** `0x40 0x01`
+
+*(Binary: `01 00000 000000001` - `01000000 00000001`)*
 
 ### Body
 
@@ -42,8 +43,9 @@ The server responds to the connection request, indicating acceptance or rejectio
 |:--------------:|:---------:|:----------------:|
 | `00`           | `00000`   | `000000001`      |
 
-**Raw header bytes (big-endian):** `0x00 0x01`
-*(Binary: `00 00000 000000001`, split as `00000000 00000001`)*
+**Raw header bytes:** `0x00 0x01`
+
+*(Binary: `00 00000 000000001` - `00000000 00000001`)*
 
 ### Body
 

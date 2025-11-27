@@ -1,0 +1,53 @@
+---
+title: 0x07 - Game loaded
+description: notify that resource loading is complete
+---
+
+
+# Game loaded (ID 7)
+
+This command notify a client or the server that his map loading is done
+>  **This command must be sent over TCP.**
+
+---
+
+## Client -> Server
+
+### Context
+The client notify the server that his local assets loading is done.
+
+### Header
+
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `01`           | `00111`   | `000000000`      |
+
+**Raw header bytes:** `0x4E 0x00`
+*(Binary: `01 00111 000000000` - `01001010 00000000`)*
+
+### Body
+
+none
+
+---
+
+## Server -> Client
+
+### Context
+The server notifies the client that the game is starting. This instruction is sent after the server has received "loading done" confirmations from all ready clients.
+
+### Header
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `00`           | `00111`   | 0                |
+
+**Example:**
+
+Body length = `0` → `000000000`
+
+Header bytes: `0x0E 0x00`
+*(Binary: `00 00111 000000000` → `00001110 00000000`)*
+
+### Body
+
+none

@@ -24,6 +24,7 @@ The client requests a graceful disconnection from the server.
 | `01`           | `00001`   | `000000000`      |
 
 **Raw header bytes (big-endian):** `0x42 0x00`
+
 *(Binary: `01 00001 000000000` - `01000010 00000000`)*
 
 ### Body
@@ -43,9 +44,12 @@ The server forcibly disconnects (kicks) the client, optionally providing a reaso
 
 Where *N* is the length of the reason string (≤ 510 bytes to respect the 512-byte packet limit).
 
-**Example (8-byte reason):**
+**Example (reason = ratio!!):**
+
 Body length = `8` - `000001000`
+
 Header bytes: `0x02 0x08`
+
 *(Binary: `00 00001 000001000` - `00000010 00001000`)*
 
 ### Body

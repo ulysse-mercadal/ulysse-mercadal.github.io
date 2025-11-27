@@ -35,9 +35,13 @@ Create:
 
 Where *N* = length of lobby name (3-510 bytes).
 
-**Example (name = "R-Type Arena", 13 bytes):**
+**Example (name = "R-Type Arena"):**
+
 Body length = `13` - `000001101`
+
 Header bytes: `0x46 0x0D`
+
+*(Binary: `01 00011 000001101` - `01000110 00001101`)*
 
 ---
 
@@ -68,8 +72,12 @@ The server responds to the join/create request.
 Where *N* = length of response body (0-510).
 
 **Example (success, empty body):**
+
 Body length = `0` - `000000000`
+
 Header bytes: `0x06 0x00`
+
+*(Binary: `00 00011 000000000` - `00000110 00000000`)*
 
 ### Body
 | Size (bytes) | Type     | Content                                  |

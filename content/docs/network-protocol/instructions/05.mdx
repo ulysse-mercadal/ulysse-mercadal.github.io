@@ -1,0 +1,57 @@
+---
+title: 0x05 - Ready
+description: toogle player ready statut in lobby
+---
+
+
+# Ready (ID 5)
+
+This command allows a client to set his status as **ready** or **not ready**a lobby. The server responds with success or failure.
+
+>  **This command must be sent over TCP.**
+
+---
+
+## Client -> Server
+
+### Context
+The client requests to change his ready status.
+
+### Header
+
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `01`           | `00101`   | `000000000`      |
+
+**Raw header bytes:** `0x4A 0x00`
+
+*(Binary: `01 00101 000000000` - `01001010 00000000`)*
+
+### Body
+
+none
+
+---
+
+## Server -> Client
+
+### Context
+The server responds to the leave request.
+
+### Header
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `00`           | `00101`   | 1                |
+
+**Example:**
+
+Body length = `1` - `000000001`
+
+Header bytes: `0x0A 0x01`
+
+*(Binary: `00 00101 000000001` - `00001010 00000001`)*
+
+### Body
+| Size (bytes) | Type     | Content                                  |
+|:------------:|:--------:|------------------------------------------|
+| 1            | `bool`   | leaving status: `1` = accepted, `0` = error  |

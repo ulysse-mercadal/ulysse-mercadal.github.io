@@ -23,10 +23,10 @@ Each message in the R-Type Protocol is identified by an 8-bit **instruction ID**
 | 0x06  | `START_GAME`       | `TCP`| Ask or notify the match is begining. | `yes` |
 | 0x07  | `GAME_LOADED`      | `TCP`| Sent once local assets are loaded. Server waits before sending `GAME_START`. | `no` |
 | 0x08  | `GAME_START`       | `TCP`| Final signal from the server that the game loop is starting. | `yes` |
-| 0x09  | `PAUSE`            | `UDP`| Update game pause state. | `yes`
-| 0x10  | `WIN`              | `UDP`| Notifies victory | `yes`
-| 0x11  | `LOSE`             | `UDP`| Notifies defeat | `yes`
-| 0x12  | `DEAD`             | `UDP`| Notifies that a player or entity has been destroyed. | `yes`
+| 0x09  | `PAUSE`            | `TCP`| Update game pause state. | `yes`
+| 0x10  | `WIN`              | `TCP`| Notifies victory | `yes`
+| 0x11  | `LOSE`             | `TCP`| Notifies defeat | `yes`
+| 0x12  | `DEAD`             | `TCP`| Notifies that a player or entity has been destroyed. | `yes`
 | 0x13  | `INPUT`            | `UDP`| Reports a player input action, identified by a key for more modularity. | `yes` |
 | 0x14  | `MOVE`             | `UDP`| Updates a player’s position in 3D space (`x, y, z`). | `yes` |
 | 0x15  | `SET_POSITION`     | `UDP`| Forces an absolute position update. | `yes` |

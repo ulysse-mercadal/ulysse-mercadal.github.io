@@ -1,0 +1,59 @@
+---
+title: 0x06 - Start game
+description: request or annouce the game initialization procedure
+---
+
+# Start game (ID 6)
+
+This command allows a client or the server to start the game initialization procedure
+>  **This command must be sent over TCP.**
+
+---
+
+## Client -> Server
+
+### Context
+The client (e.g, game leader) requests to start the game loading procedure.
+
+### Header
+
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `01`           | `00110`   | `000000000`      |
+
+**Raw header bytes:** `0x4C 0x00`
+
+*(Binary: `01 00110 000000000` - `01001010 00000000`)*
+
+### Body
+
+none
+
+---
+
+## Server -> Client
+
+### Context
+The server responds to the start request.
+
+### Header
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `00`           | `00110`   | *N*              |
+
+Where *N* = map configuration file content (0-510).
+
+> Since the information on the game map can be very extensive, the `START GAME` command is particularly likely to be split into several commands.
+
+**Example (a lot of map information):**
+
+Body length = `510` - `111111110`
+
+Header bytes: `0x0D 0xFE`
+
+*(Binary: `00 00110 111111110` - `00001101 11111110`)*
+
+### Body
+| Size (bytes) | Type     | Content                                  |
+|:------------:|:--------:|------------------------------------------|
+| *N*          | `string` | map configuration file content     |
