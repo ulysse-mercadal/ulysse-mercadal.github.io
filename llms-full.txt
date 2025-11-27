@@ -1053,10 +1053,10 @@ The R-Type Protocol uses a **uniform binary packet format** for **all communicat
 
 ## General Rules
 
-* **Maximum size per packet**: **128 bytes** (including header and body).
+* **Maximum size per packet**: **512 bytes** (including header and body).
 * A single packet may contain **one or more concatenated instructions**.
-* If the total data exceeds 128 bytes, it **must be split** into multiple packets.
-* Each **instruction** is self-contained and consists of a **2-byte header** + an optional **body** (0 to 126 bytes).
+* If the total data exceeds 512 bytes, it **must be split** into multiple packets.
+* Each **instruction** is self-contained and consists of a **2-byte header** + an optional **body** (0 to 510 bytes).
 * **Instruction bodies are optional**: some instructions have an empty body (`body length = 0`), while others carry structured game data.
 
 > **Note**: Even during the **TCP handshake phase**, messages follow this exact format. The transport layer (TCP vs. UDP) affects delivery guarantees and latency, **not** the message encoding.
@@ -1087,7 +1087,7 @@ Where:
 
 * `D` = Direction (2 bits → 4 possible values)
 * `I` = Instruction ID (5 bits → max 31)
-* `L` = Body length (9 bits → max 511, but effectively **≤126** due to 128-byte packet limit)
+* `L` = Body length (9 bits → max 511,)
 
 ***
 
@@ -1096,7 +1096,7 @@ Where:
 | Transport | Typical Use Case                                            | Packet Handling                                                                                                                                      |
 | --------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **TCP**   | Handshake, authentication, session setup, reliable commands | Packets are sent as a **stream**; the receiver must **frame** messages using the known 2-byte header + declared body length to delimit instructions. |
-| **UDP**   | Real-time gameplay (inputs, state updates)                  | Each datagram contains **one full packet** (≤128 bytes). Multiple instructions may be batched, but the entire datagram must fit in one UDP payload.  |
+| **UDP**   | Real-time gameplay (inputs, state updates)                  | Each datagram contains **one full packet** (≤512 bytes). Multiple instructions may be batched, but the entire datagram must fit in one UDP payload.  |
 
 > Because the same format is used on both transports, **serialization and parsing logic can be shared** between TCP and UDP code paths.
 
@@ -1140,18 +1140,18 @@ The client attempts to connect to the server and declares the protocol version i
 
 ### Header
 
-| Direction (2b) | Code (5b) | Body Length (9b) |
-| :------------: | :-------: | :--------------: |
-|      `01`      |  `00000`  |    `000000001`   |
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `00000` | `000000001` |
 
 **Raw header bytes (big-endian):** `0x40 0x01`
 *(Binary: `01 00000 000000001`, split as `01000000 00000001`)*
 
 ### Body
 
-| Size (bytes) |   Type  | Content                 |
-| :----------: | :-----: | ----------------------- |
-|       1      | `uint8` | Protocol version number |
+| Size (bytes) |  Type | Content                 |
+| :----------: | :---: | ----------------------- |
+|       1      | `int` | Protocol version number |
 
 ***
 
@@ -1163,137 +1163,163 @@ The server responds to the connection request, indicating acceptance or rejectio
 
 ### Header
 
-| Direction (2b) | Code (5b) | Body Length (9b) |
-| :------------: | :-------: | :--------------: |
-|      `00`      |  `00000`  |    `000000001`   |
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `00000` | `000000001` |
 
 **Raw header bytes (big-endian):** `0x00 0x01`
 *(Binary: `00 00000 000000001`, split as `00000000 00000001`)*
 
 ### Body
 
-| Size (bytes) |   Type  | Content                                           |
-| :----------: | :-----: | ------------------------------------------------- |
-|       1      | `uint8` | Connection status: `1` = accepted, `0` = rejected |
+| Size (bytes) |  Type  | Content                                           |
+| :----------: | :----: | ------------------------------------------------- |
+|       1      | `bool` | Connection status: `1` = accepted, `0` = rejected |
 
 
-# 0x01 - disconnection
+# 0x01 - Disconnection
 
 
 
-***
+# Disconnection (ID 1)
 
-# Description
+This command is used to **terminate a session**—either initiated by the client (voluntary leave) or by the server (kick).
 
-This command is used to request a disconnection or to kick a client from the server.
+> warning! **This command uses TCP exclusively.**
 
-> warning! this command use `TCP`
-
-***
-
-## client -> server
-
-### context:
-
-the client want to leave the server
-
-> if the player is in a game, you may want to send a `GAME LEAVE` command first
-
-### header:
-
-| direction |    code    | body size |
-| :-------: | :--------: | :-------: |
-|    `1`    | `00000010` | `0000000` |
-
-### body:
-
-none
+> If a player is in an active match, you may want to first send a game-level leave notification (e.g., `LEAVE_LOBBY`) before issuing this command.
 
 ***
 
-## server -> client
+## Client → Server
 
-### context:
+### Context
 
-the server kick a player
+The client requests a graceful disconnection from the server.
 
-### header:
+### Header
 
-| direction |    code    | body size |
-| :-------: | :--------: | :-------: |
-|    `0`    | `00000010` |  variable |
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `00001` | `000000000` |
 
-### body:
+**Raw header bytes (big-endian):** `0x42 0x00`
+*(Binary: `01 00001 000000000` - `01000010 00000000`)*
 
-| size (in bytes) |   type   | content |
-| :-------------: | :------: | :-----: |
-|     variable    | `string` |  reason |
+### Body
 
-
-# 0x03 - join lobby
-
-
+None.
 
 ***
 
-# Description
+## Server → Client
 
-This command is used to request to join or crate a lobby.
+### Context
 
-> warning! this command use `TCP`
+The server forcibly disconnects (kicks) the client, optionally providing a reason.
 
-***
+### Header
 
-## client -> server
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `00001` |     *N*     |
 
-### context:
+Where *N* is the length of the reason string (≤ 510 bytes to respect the 512-byte packet limit).
 
-the client want to join or create a game lobby
+**Example (8-byte reason):**
+Body length = `8` - `000001000`
+Header bytes: `0x02 0x08`
+*(Binary: `00 00001 000001000` - `00000010 00001000`)*
 
-### header:
+### Body
 
-to join an existing lobby:
+| Size (bytes) |   Type   | Content              |
+| :----------: | :------: | -------------------- |
+|  *N* (0–510) | `string` | UTF-8 reason message |
 
-| direction |    code    | body size |
-| :-------: | :--------: | :-------: |
-|    `1`    | `00000011` | `0000001` |
+> If the body length is `0`, no reason is provided (silent kick).
 
-to create a new lobby:
 
-| direction |    code    | body size |
-| :-------: | :--------: | :-------: |
-|    `1`    | `00000011` |  variable |
+# 0x03 - Join Lobby
 
-### body:
 
-to join an existing lobby:
 
-| size (in bytes) |  type |  content |
-| :-------------: | :---: | :------: |
-|       `1`       | `int` | lobby id |
+# Join Lobby (ID 3)
 
-to create a new lobby:
+This command allows a client to either **join an existing game lobby** (by ID) or **create a new lobby** (by name). The server responds with success or failure.
 
-| size (in bytes) |   type   |   content  |
-| :-------------: | :------: | :--------: |
-|     variable    | `string` | lobby name |
+> **This command must be sent over TCP.**
 
 ***
 
-## server -> client
+## Client -> Server
 
-### context:
+### Context
 
-the server repond to a join lobby request
+The client requests to join or create a lobby.
 
-### header:
+### Header
 
-| direction |    code    | body size |
-| :-------: | :--------: | :-------: |
-|    `0`    | `00000011` | `0000001` |
+Join:
 
-### body:
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `00011` | `000000001` |
 
-| size (in bytes) |   type   | content |
-| :-------------: | :------: | :-----: |
-|     variable    | `string` |  reason |
+**Raw header bytes:** `0x46 0x01`
+*(Binary: `01 00011 000000001` - `01000110 00000001`)*
+
+Create:
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `00011` |     *N*     |
+
+Where *N* = length of lobby name (3-510 bytes).
+
+**Example (name = "R-Type Arena", 13 bytes):**
+Body length = `13` - `000001101`
+Header bytes: `0x46 0x0D`
+
+***
+
+### Body
+
+Join:
+
+| Size (bytes) |  Type | Content  |
+| :----------: | :---: | -------- |
+|       1      | `int` | Lobby ID |
+
+Create:
+
+| Size (bytes) |   Type   | Content          |
+| :----------: | :------: | ---------------- |
+|  *N* (3-510) | `string` | UTF-8 lobby name |
+
+***
+
+## Server -> Client
+
+### Context
+
+The server responds to the join/create request.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `00011` |     *N*     |
+
+Where *N* = length of response body (0-510).
+
+**Example (success, empty body):**
+Body length = `0` - `000000000`
+Header bytes: `0x06 0x00`
+
+### Body
+
+| Size (bytes) |   Type   | Content                                                 |
+| :----------: | :------: | ------------------------------------------------------- |
+|       1      |  `bool`  | Connection status: `1` = accepted, `0` = rejected       |
+|    *N* > 0   | `string` | **Additional message** (e.g., "Lobby full, wrong name") |
