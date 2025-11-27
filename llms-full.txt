@@ -55,7 +55,7 @@ To compile the game engine, just use our CMake, it will fetch our Dependencies b
 
 
 
-The 3D engine follows a standard **init → update → render** loop. These three methods form the backbone of the rendering pipeline.
+The 3D engine follows a standard **init -> update -> render** loop. These three methods form the backbone of the rendering pipeline.
 
 ***
 
@@ -689,10 +689,10 @@ After this, rendering uses `getCurrentShader()`.
 
 ## Rendering Behavior
 
-| Pipeline State                 | Rendering Behavior                                                                                                         |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| **Pipeline empty**             | Uses `getCurrentShader()` to render geometry directly to screen.                                                           |
-| **Pipeline has N ≥ 1 shaders** | Renders geometry with `pipeline[0]` → framebuffer,then applies `pipeline[1]` to `pipeline[N-1]` as post-processing passes. |
+| Pipeline State                 | Rendering Behavior                                                                                                          |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| **Pipeline empty**             | Uses `getCurrentShader()` to render geometry directly to screen.                                                            |
+| **Pipeline has N ≥ 1 shaders** | Renders geometry with `pipeline[0]` -> framebuffer,then applies `pipeline[1]` to `pipeline[N-1]` as post-processing passes. |
 
 > The engine **automatically manages framebuffers** and texture bindings between passes.
 
@@ -1085,9 +1085,9 @@ Each command starts with a **2-byte (16-bit) header**, followed by a body whose 
 
 Where:
 
-* `D` = Direction (2 bits → 4 possible values)
-* `I` = command ID (5 bits → max 31)
-* `L` = Body length (9 bits → max 511,)
+* `D` = Direction (2 bits -> 4 possible values)
+* `I` = command ID (5 bits -> max 31)
+* `L` = Body length (9 bits -> max 511,)
 
 ***
 
@@ -1107,11 +1107,11 @@ Where:
 An `EXAMPLE` command (ID = 10) with a 4-byte body sent with direction code `01`:
 
 * Direction = `01`
-* ID = `10` → binary `01010`
-* Body length = `4` → binary `000000100`
+* ID = `10` -> binary `01010`
+* Body length = `4` -> binary `000000100`
 
 Full 16-bit header (big-endian):
-`01 01010 000000100` → grouped as two bytes:
+`01 01010 000000100` -> grouped as two bytes:
 
 * Byte 0: `01010100` = `0x54`
 * Byte 1: `00000100` = `0x04`
@@ -1193,7 +1193,7 @@ This command is used to **terminate a session**—either initiated by the client
 
 ***
 
-## Client → Server
+## Client -> Server
 
 ### Context
 
@@ -1215,7 +1215,7 @@ None.
 
 ***
 
-## Server → Client
+## Server -> Client
 
 ### Context
 
@@ -1258,7 +1258,7 @@ This command is used to **request the list of active lobbies** from the server, 
 
 ***
 
-## Client → Server
+## Client -> Server
 
 ### Context
 
@@ -1280,7 +1280,7 @@ None.
 
 ***
 
-## Server → Client
+## Server -> Client
 
 ### Context
 
@@ -1635,10 +1635,10 @@ The server notifies the client that the game is starting. This command is sent a
 
 **Example:**
 
-Body length = `0` → `000000000`
+Body length = `0` - `000000000`
 
 Header bytes: `0x0E 0x00`
-*(Binary: `00 00111 000000000` → `00001110 00000000`)*
+*(Binary: `00 00111 000000000` - `00001110 00000000`)*
 
 ### Body
 
