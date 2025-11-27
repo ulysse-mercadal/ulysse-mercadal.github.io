@@ -249,7 +249,7 @@ Rotates the camera using Euler angles:
 * `pitchDelta`: vertical rotation (in **degrees**), clamped to 89
 * `yawDelta`: horizontal rotation (in **degrees**), unbounded (360 wrap)
 
-> Rotation follows classic FPS behavior: mouse X \u2192 yaw, mouse Y \u2192 pitch.
+> Rotation follows classic FPS behavior: mouse X -> yaw, mouse Y -> pitch.
 
 ***
 
@@ -542,7 +542,7 @@ All methods return:
 ## Behavior Notes
 
 * The new transform is applied **starting from the next frame** (used in `cullAndSortObjects`).
-* Works **only on non-animated objects** (e.g., `.obj`). For skinned FBX models, vertex positions are driven by bones \u2014 these transforms are **ignored during animation**.
+* Works **only on non-animated objects** (e.g., `.obj`). For skinned FBX models, vertex positions are driven by bone, these transforms are **ignored during animation**.
 
 ## Usage in Game Loop
 
