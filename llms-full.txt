@@ -400,7 +400,7 @@ int Renderer3D::addObject(
 
 ```cpp
 int id = renderer.addObject(
-    "assets/crate.obj",
+    "assets/indien-qui-danse.fbx",
     {0, 0, -5});
 
 if (id == -1) {
@@ -412,7 +412,7 @@ if (id == -1) {
 
 ```cpp
 int robotId = renderer.addObject(
-    "assets/robot.fbx",
+    "assets/indien-qui-danse.fbx",
     {2.0f, 0.0f, -3.0f},
     {0.0f, glm::radians(90.0f), 0.0f}, // rotate to face camera
     {1.5f} // scale up
@@ -473,8 +473,8 @@ bool Renderer3D::setObjectPosition(
 **Example**:
 
 ```cpp
-int id = renderer.addObject("props/crate.obj", {0,0,0});
-renderer.setObjectPosition("props/crate.obj", id, {5.0f, 1.0f, -3.0f});
+int id = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
+renderer.setObjectPosition("assets/indien-qui-danse.fbx", id, {5.0f, 1.0f, -3.0f});
 ```
 
 ***
@@ -494,8 +494,8 @@ bool Renderer3D::setObjectRotation(
 **Example**:
 
 ```cpp
-int id = renderer.addObject("props/crate.obj", {0,0,0});
-renderer.setObjectRotation("props/crate.obj", id, {0.0f, glm::radians(90.0f), 0.0f});
+int id = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
+renderer.setObjectRotation("assets/indien-qui-danse.fbx", id, {0.0f, glm::radians(90.0f), 0.0f});
 ```
 
 ***
@@ -515,9 +515,9 @@ bool Renderer3D::setObjectScale(
 **Example**:
 
 ```cpp
-int id = renderer.addObject("props/crate.obj", {0,0,0});
-renderer.setObjectScale("props/crate.obj", id, glm::vec3(2.0f)); // uniform
-renderer.setObjectScale("props/crate.obj", id, {1.0f, 2.0f, 0.5f}); // non-uniform
+int id = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
+renderer.setObjectScale("assets/indien-qui-danse.fbx", id, glm::vec3(2.0f)); // uniform
+renderer.setObjectScale("assets/indien-qui-danse.fbx", id, {1.0f, 2.0f, 0.5f}); // non-uniform
 ```
 
 ***
@@ -552,11 +552,11 @@ All methods return:
 
 ```cpp
 // In initialization
-int playerModelId = renderer.addObject("characters/player.fbx", {0,0,0});
+int playerModelId = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
 
 // In update loop
 glm::vec3 newPos = playerPosition + movementInput;
-renderer.setObjectPosition("characters/player.fbx", playerModelId, newPos);
+renderer.setObjectPosition("assets/indien-qui-danse.fbx", playerModelId, newPos);
 ```
 
 
@@ -751,7 +751,7 @@ The engine supports **skeletal animation** for FBX models. Animations are manage
 Starts or switches to a named animation for a specific object instance.
 
 ```cpp
-int robotId = renderer.addObject("characters/robot.fbx");
+int robotId = renderer.addObject("assets/indien-qui-danse.fbx");
 renderer.playAnimation(robotId, "Walk", true);
 ```
 
@@ -836,7 +836,7 @@ assert(!names.empty()); // should list "Idle", "Walk", etc.
 ## Example: Animation Controller
 
 ```cpp
-int characterId = renderer.addObject("player.fbx", {0,0,0});
+int characterId = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
 
 // Play idle by default
 renderer.playAnimation(characterId, "Idle", true);
@@ -867,7 +867,7 @@ The engine supports **skeletal animation** for FBX models. Animations are manage
 Starts or switches to a named animation for a specific object instance.
 
 ```cpp
-int robotId = renderer.addObject("characters/robot.fbx");
+int robotId = renderer.addObject("assets/indien-qui-danse.fbx");
 renderer.playAnimation(robotId, "Walk", true);
 ```
 
@@ -943,7 +943,7 @@ for (const auto& name : anims) {
 ## Example: Animation Controller
 
 ```cpp
-int characterId = renderer.addObject("player.fbx", {0,0,0});
+int characterId = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
 
 // Play idle by default
 renderer.playAnimation(characterId, "Idle", true);
@@ -1646,17 +1646,180 @@ Header bytes: `0x0E 0x00`
 none
 
 
-# 0x08 - Game start
+# 0x08 - Game Start
 
+
+
+# Game Start (ID 8)
+
+This command is sent by the server to officially start the game loop after all players have finished loading.
+
+> **This command must be sent over TCP.**
+
+> This command can only be sent by the server !
+
+***
+
+## Server -> Client
+
+### Context
+
+The server notifies all connected clients that the match is now starting. This message marks the transition from lobby/loading phase to active gameplay.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `01000` | `000000000` |
+
+**Example:**
+
+Body length = `0` - `000000000`
+
+**Raw header bytes:** `0x10 0x00`
+
+*(Binary: `00 01000 000000000` - `00010000 00000000`)*
+
+### Body
+
+None.
 
 
 # 0x09 - Pause
 
 
 
+# Pause (ID 9)
+
+This command is used to pause or resume the game state. It can be sent by the server or by a client.
+
+> **This command must be sent over TCP.**
+
+***
+
+## Client -> Server
+
+### Context
+
+The client requests to toogle the pause / resume status of the current game session.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `01001` | `000000000` |
+
+**Raw header bytes:** `0x52 0x00`
+*(Binary: `01 01001 000000001` → `01010010 00000000`)*
+
+### Body
+
+none
+
+***
+
+## Server -> Client
+
+### Context
+
+The server enforces a pause / resumes toogle for all players.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `01001` | `000000000` |
+
+**Example:**
+
+Body length = `0` - `000000000`
+
+**Raw header bytes:** `0x12 0x00`
+
+*(Binary: `00 01001 000000001` → `00010010 00000000`)*
+
+### Body
+
+none
+
+
 # 0x10 - Win
 
 
 
+# Win (ID 16)
+
+This command is sent by the server to notify clients that someonw have won the game. It marks the end of the match.
+
+> **This command must be sent over TCP.**
+
+> This command can only be sent by the server !
+
+***
+
+## Server -> Client
+
+### Context
+
+The server notifies the client of a victory condition being met
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `10000` |     *N*     |
+
+Where *N* = Winner name (3-510).
+
+**Example (name = Michel):**
+
+Body length = `7` - `000000111`
+
+**Raw header bytes:** `0x20 0x07`
+
+*(Binary: `00 10000 000000111` - `00100000 00000111`)*
+
+### Body
+
+None
+
+
 # 0x11 - Lose
 
+
+
+# Lose (ID 17)
+
+This command is sent by the server to notify a client that they have lost the game. It marks the end of the match for the player.
+
+> **This command must be sent over TCP.**
+
+> **This command can only be sent by the server!**
+
+***
+
+## Server -> Client
+
+### Context
+
+The server notifies the client that a defeat condition has been met
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `10001` |     *N*     |
+
+Where *N* = Winner name (3-510 bytes), or 0 is no one won.
+
+**Example (name = Michel):**
+
+Body length = `7` - `000000111`
+
+**Raw header bytes:** `0x21 0x07`
+
+*(Binary: `00 10001 000000111` - `00100001 00000111`)*
+
+### Body
+
+None
