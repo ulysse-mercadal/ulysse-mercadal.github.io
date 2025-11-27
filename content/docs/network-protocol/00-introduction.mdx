@@ -1,4 +1,40 @@
 ---
-title: work in progress here
-description: work in progress here
+title: Protocol Overview
+description: Specification of the network protocol used in R-Type.
 ---
+---
+# Introduction to the R-Type Protocol
+
+The **R-Type Protocol** is a lightweight, modular network protocol designed to enable real-time multiplayer communication between a game client (specifically the **R-Type 3D** client) and a dedicated server.
+
+---
+## Goals
+
+The protocol was built with the following key objectives:
+
+- **Modularity & Reusability**: It is intentionally **decoupled from game logic**, making it adaptable to virtually any real-time multiplayer game—not just R-Type.
+- **Performance**: To minimize latency, the protocol uses **TCP only for the initial connection handshake**, then switches to **UDP for all gameplay data**, ensuring fast and efficient transmission.
+- **Bandwidth Efficiency**: Game data is packaged into compact binary **messages that may contain multiple instructions** (e.g., movement + shooting + state change) in a single packet, reducing overall network overhead.
+
+---
+## Communication Flow
+
+1. **Initial Connection (TCP)**
+   The client establishes a TCP connection to the server to perform a secure **handshake**: exchanging version info, authentication tokens, and receiving a unique session ID.
+
+2. **Gameplay Communication (UDP)**
+   After the session is validated, all real-time gameplay updates—such as player input, entity states, and events—are transmitted over **UDP**. This provides the low-latency responsiveness required for fast-paced action games.
+
+3. **Multiplexed Packets**
+   Each UDP packet can carry **one or more instructions**. This batching mechanism optimizes bandwidth usage and reduces packet count, which is crucial for maintaining smooth synchronization under varying network conditions.
+
+It contains **no hardcoded game logic**, allowing seamless integration into other game engines or genres (e.g., platformers, shooters, real-time strategy) with minimal adaptation.
+
+---
+## header and body
+
+the instruction are split in two main parts the header and the body. the header contains information about the instruction, the sender, and the body size. the body contains the additional information (name, positions, status...)
+
+
+
+This document serves as the foundation for the full R-Type Protocol specification. Subsequent sections will detail packet structures, supported instruction types, sequence numbering, and strategies for handling packet loss in UDP streams.
