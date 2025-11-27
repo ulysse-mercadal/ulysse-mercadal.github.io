@@ -20,10 +20,6 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
-# work in progress here
-
-
-
 # 3D Engine Overview
 
 
@@ -958,6 +954,10 @@ if (isWalking) {
     }
 }
 ```
+
+
+# work in progress here
+
 
 
 # Protocol Overview
