@@ -1,0 +1,52 @@
+---
+title: 0x00 - Connection
+description: Establish a new client connection to the server.
+---
+
+# Connection (ID 0)
+
+This command is used to **initiate and accept** a new client connection to the server. It is the **first message** sent by a client after opening a TCP socket. The server responds to indicate whether the connection is accepted (e.g., due to version compatibility or server capacity).
+
+> warning! **This command must be sent over TCP.** It is part of the initial handshake phase.
+
+---
+
+## Client -> Server
+
+### Context
+The client attempts to connect to the server and declares the protocol version it supports.
+
+### Header
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `01`           | `00000`   | `000000001`      |
+
+**Raw header bytes (big-endian):** `0x40 0x01`
+*(Binary: `01 00000 000000001`, split as `01000000 00000001`)*
+
+### Body
+
+| Size (bytes) | Type   | Content                |
+|:------------:|:------:|------------------------|
+| 1            | `int`  | Protocol version number|
+
+---
+
+## Server -> Client
+
+### Context
+The server responds to the connection request, indicating acceptance or rejection.
+
+### Header
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `00`           | `00000`   | `000000001`      |
+
+**Raw header bytes (big-endian):** `0x00 0x01`
+*(Binary: `00 00000 000000001`, split as `00000000 00000001`)*
+
+### Body
+
+| Size (bytes) | Type   | Content                             |
+|:------------:|:------:|-------------------------------------|
+| 1            | `bool` | Connection status: `1` = accepted, `0` = rejected |

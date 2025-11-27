@@ -1,0 +1,78 @@
+---
+title: 0x03 - Join Lobby
+description: Request to join an existing lobby or create a new one.
+---
+
+# Join Lobby (ID 3)
+
+This command allows a client to either **join an existing game lobby** (by ID) or **create a new lobby** (by name). The server responds with success or failure.
+
+>  **This command must be sent over TCP.**
+
+---
+
+## Client -> Server
+
+### Context
+The client requests to join or create a lobby.
+
+### Header
+
+Join:
+
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `01`           | `00011`   | `000000001`      |
+
+**Raw header bytes:** `0x46 0x01`
+*(Binary: `01 00011 000000001` - `01000110 00000001`)*
+
+Create:
+
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `01`           | `00011`   | *N*              |
+
+Where *N* = length of lobby name (3-510 bytes).
+
+**Example (name = "R-Type Arena", 13 bytes):**
+Body length = `13` - `000001101`
+Header bytes: `0x46 0x0D`
+
+---
+
+### Body
+
+Join:
+| Size (bytes) | Type    | Content        |
+|:------------:|:-------:|----------------|
+| 1            | `int` | Lobby ID       |
+
+Create:
+| Size (bytes) | Type     | Content             |
+|:------------:|:--------:|---------------------|
+| *N* (3-510)  | `string` | UTF-8 lobby name    |
+
+---
+
+## Server -> Client
+
+### Context
+The server responds to the join/create request.
+
+### Header
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `00`           | `00011`   | *N*              |
+
+Where *N* = length of response body (0-510).
+
+**Example (success, empty body):**
+Body length = `0` - `000000000`
+Header bytes: `0x06 0x00`
+
+### Body
+| Size (bytes) | Type     | Content                                  |
+|:------------:|:--------:|------------------------------------------|
+| 1            | `bool`   | Connection status: `1` = accepted, `0` = rejected  |
+| *N* > 0      | `string` | **Additional message** (e.g., "Lobby full, wrong name") |

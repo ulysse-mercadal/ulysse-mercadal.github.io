@@ -1,0 +1,57 @@
+---
+title: 0x01 - Disconnection
+description: Gracefully disconnect or forcibly kick a client from the server.
+---
+
+# Disconnection (ID 1)
+
+This command is used to **terminate a session**—either initiated by the client (voluntary leave) or by the server (kick).
+
+> warning! **This command uses TCP exclusively.**
+
+> If a player is in an active match, you may want to first send a game-level leave notification (e.g., `LEAVE_LOBBY`) before issuing this command.
+
+---
+
+## Client → Server
+
+### Context
+The client requests a graceful disconnection from the server.
+
+### Header
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `01`           | `00001`   | `000000000`      |
+
+**Raw header bytes (big-endian):** `0x42 0x00`
+*(Binary: `01 00001 000000000` - `01000010 00000000`)*
+
+### Body
+None.
+
+---
+
+## Server → Client
+
+### Context
+The server forcibly disconnects (kicks) the client, optionally providing a reason.
+
+### Header
+| Direction | Code  | Body Length |
+|:--------------:|:---------:|:----------------:|
+| `00`           | `00001`   | *N*              |
+
+Where *N* is the length of the reason string (≤ 510 bytes to respect the 512-byte packet limit).
+
+**Example (8-byte reason):**
+Body length = `8` - `000001000`
+Header bytes: `0x02 0x08`
+*(Binary: `00 00001 000001000` - `00000010 00001000`)*
+
+### Body
+
+| Size (bytes) | Type     | Content              |
+|:------------:|:--------:|----------------------|
+| *N* (0–510)  | `string` | UTF-8 reason message |
+
+> If the body length is `0`, no reason is provided (silent kick).
