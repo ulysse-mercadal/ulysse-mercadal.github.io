@@ -1,0 +1,38 @@
+---
+title: 0x0C - Dead
+description: Notify client of the player death.
+---
+
+# Dead (ID 12)
+
+This command is sent by the server to notify clients that a player has died.
+
+> **This command must be sent over TCP.**
+
+> **This command can only be sent by the server!**
+
+---
+
+## Server → Client
+
+### Context
+The server notifies clients that a player entity has been destroyed (e.g., hit by enemy, out of bounds).
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `01100` | *N*         |
+
+Where *N* = Dead player name (3–510 bytes).
+
+**Example (name = "Michel"):**
+
+Body length = `7` → `000000111`
+
+**Raw header bytes:** `0x18 0x07`
+
+*(Binary: `00 01100 000000111` → `00011000 00000111`)*
+
+### Body
+
+None

@@ -1,9 +1,9 @@
 ---
-title: 0x11 - Lose
+title: 0x0B - Lose
 description: Set game status to lose.
 ---
 
-# Lose (ID 17)
+# Lose (ID 11)
 
 This command is sent by the server to notify a client that they have lost the game. It marks the end of the match for the player.
 
@@ -21,17 +21,17 @@ The server notifies the client that a defeat condition has been met
 ### Header
 | Direction | Code  | Body Length |
 |:---------:|:-----:|:-----------:|
-| `00`      | `10001` | *N*       |
+| `00`      | `01011` | *N*       |
 
-Where *N* = Winner name (3-510 bytes), or 0 is no one won.
+Where *N* = Loser name (3–510 bytes), or 0 if no one lost.
 
 **Example (name = Michel):**
 
 Body length = `7` - `000000111`
 
-**Raw header bytes:** `0x21 0x07`
+**Raw header bytes:** `0x16 0x07`
 
-*(Binary: `00 10001 000000111` - `00100001 00000111`)*
+*(Binary: `00 01011 000000111` - `00010110 00000111`)*
 
 ### Body
 

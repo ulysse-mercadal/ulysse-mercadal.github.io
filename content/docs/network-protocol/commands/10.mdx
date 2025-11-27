@@ -1,15 +1,15 @@
 ---
-title: 0x10 - Win
+title: 0x0A - Win
 description: Set game status to win.
 ---
 
-# Win (ID 16)
+# Win (ID 10)
 
-This command is sent by the server to notify clients that someonw have won the game. It marks the end of the match.
+This command is sent by the server to notify clients that someone has won the game. It marks the end of the match.
 
 > **This command must be sent over TCP.**
 
-> This command can only be sent by the server !
+> This command can only be sent by the server!
 
 ---
 
@@ -21,18 +21,17 @@ The server notifies the client of a victory condition being met
 ### Header
 | Direction | Code  | Body Length |
 |:---------:|:-----:|:-----------:|
-| `00`      | `10000` | *N* |
+| `00`      | `01010` | *N* |
 
-Where *N* = Winner name (3-510).
-
+Where *N* = Winner name (3\u2013510).
 
 **Example (name = Michel):**
 
 Body length = `7` - `000000111`
 
-**Raw header bytes:** `0x20 0x07`
+**Raw header bytes:** `0x14 0x07`
 
-*(Binary: `00 10000 000000111` - `00100000 00000111`)*
+*(Binary: `00 01010 000000111` - `00010100 00000111`)*
 
 ### Body
 
