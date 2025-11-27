@@ -1,16 +1,16 @@
 ---
-title: Instruction list
-description: list of all the instruction handeled by the protocol.
+title: command list
+description: list of all the command handeled by the protocol.
 ---
 ---
 
 # Protocol Commands
 
-Each message in the R-Type Protocol is identified by an 8-bit **instruction ID**. The same ID may be used for related actions (e.g., client request and server broadcast), and the exact meaning is determined by the header. Below is the complete list of supported commands.
+Each message in the R-Type Protocol is identified by an 8-bit **command ID**. The same ID may be used for related actions (e.g., client request and server broadcast), and the exact meaning is determined by the header. Below is the complete list of supported commands.
 
 > - All commands respect the **512-byte packet limit**. Large payloads (e.g., long messages) must be split across multiple packets.
 
-> - The same instruction ID is used for both **requests** and **notifications/responses**
+> - The same command ID is used for both **requests** and **notifications/responses**
 
 | ID | Name                  | protocol| Description | Broadcast |
 |----|-----------------------|:---------:|-------------|:-:|
