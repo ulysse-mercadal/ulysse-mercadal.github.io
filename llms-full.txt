@@ -20,6 +20,10 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
+# work in progress here
+
+
+
 # 3D Engine Overview
 
 
@@ -956,10 +960,6 @@ if (isWalking) {
 ```
 
 
-# work in progress here
-
-
-
 # Protocol Overview
 
 
@@ -1638,6 +1638,7 @@ The server notifies the client that the game is starting. This command is sent a
 Body length = `0` - `000000000`
 
 Header bytes: `0x0E 0x00`
+
 *(Binary: `00 00111 000000000` - `00001110 00000000`)*
 
 ### Body
