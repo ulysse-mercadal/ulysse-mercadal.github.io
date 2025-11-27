@@ -20,10 +20,6 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
-# work in progress here
-
-
-
 # 3D Engine Overview
 
 
@@ -960,6 +956,10 @@ if (isWalking) {
 ```
 
 
+# work in progress here
+
+
+
 # Protocol Overview
 
 
@@ -1227,8 +1227,11 @@ The server forcibly disconnects (kicks) the client, optionally providing a reaso
 Where *N* is the length of the reason string (≤ 510 bytes to respect the 512-byte packet limit).
 
 **Example (8-byte reason):**
+
 Body length = `8` - `000001000`
+
 Header bytes: `0x02 0x08`
+
 *(Binary: `00 00001 000001000` - `00000010 00001000`)*
 
 ### Body
@@ -1375,8 +1378,12 @@ The server responds to the join/create request.
 Where *N* = length of response body (0-510).
 
 **Example (success, empty body):**
+
 Body length = `0` - `000000000`
+
 Header bytes: `0x06 0x00`
+
+*(Binary: `00 00011 000000000` - `00000110 00000000`)*
 
 ### Body
 
@@ -1432,8 +1439,12 @@ The server responds to the leave request.
 |    `00`   | `00100` |      1      |
 
 **Example (success):**
+
 Body length = `1` - `000000001`
+
 Header bytes: `0x04 0x01`
+
+*(Binary: `00 00100 000000001` - `00001000 00000001`)*
 
 ### Body
 
@@ -1488,8 +1499,12 @@ The server responds to the leave request.
 |    `00`   | `00101` |      1      |
 
 **Example (success):**
+
 Body length = `1` - `000000001`
+
 Header bytes: `0x0A 0x01`
+
+*(Binary: `00 00101 000000001` - `00001010 00000001`)*
 
 ### Body
 
@@ -1502,8 +1517,128 @@ Header bytes: `0x0A 0x01`
 
 
 
+# Start game (ID 6)
+
+This command allows a client or the server to start the game initialization procedure
+
+> **This command must be sent over TCP.**
+
+***
+
+## Client -> Server
+
+### Context
+
+The client (e.g, game leader) requests to start the game loading procedure.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `00110` | `000000000` |
+
+**Raw header bytes:** `0x4C 0x00`
+*(Binary: `01 00101 000000000` - `01001010 00000000`)*
+
+### Body
+
+none
+
+***
+
+## Server -> Client
+
+### Context
+
+The server responds to the start request.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `00110` |     *N*     |
+
+Where *N* = map configuration file content (0-510).
+
+> Since the information on the game map can be very extensive, the `START GAME` command is particularly likely to be split into several commands.
+
+**Example (success):**
+
+Body length = `510` - `111111110`
+
+Header bytes: `0x0D 0xFE`
+
+*(Binary: `00 00110 111111110` - `00001101 11111110`)*
+
+### Body
+
+| Size (bytes) |   Type   | Content                        |
+| :----------: | :------: | ------------------------------ |
+|      *N*     | `string` | map configuration file content |
+
+
 # 0x07 - Game loaded
 
+
+
+# Game loaded (ID 7)
+
+This command notify a client or the server that his map loading is done
+
+> **This command must be sent over TCP.**
+
+***
+
+## Client -> Server
+
+### Context
+
+The client (e.g, game leader) requests to start the game loading procedure.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `00110` | `000000000` |
+
+**Raw header bytes:** `0x4C 0x00`
+*(Binary: `01 00101 000000000` - `01001010 00000000`)*
+
+### Body
+
+none
+
+***
+
+## Server -> Client
+
+### Context
+
+The server responds to the start request.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `00110` |     *N*     |
+
+Where *N* = map configuration file content (0-510).
+
+> Since the information on the game map can be very extensive, the `START GAME` command is particularly likely to be split into several commands.
+
+**Example (success):**
+
+Body length = `510` - `111111110`
+
+Header bytes: `0x0D 0xFE`
+
+*(Binary: `00 00110 111111110` - `00001101 11111110`)*
+
+### Body
+
+| Size (bytes) |   Type   | Content                        |
+| :----------: | :------: | ------------------------------ |
+|      *N*     | `string` | map configuration file content |
 
 
 # 0x07 - Game start
