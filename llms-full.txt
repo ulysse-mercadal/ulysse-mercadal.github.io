@@ -1144,8 +1144,9 @@ The client attempts to connect to the server and declares the protocol version i
 | :-------: | :-----: | :---------: |
 |    `01`   | `00000` | `000000001` |
 
-**Raw header bytes (big-endian):** `0x40 0x01`
-*(Binary: `01 00000 000000001`, split as `01000000 00000001`)*
+**Raw header bytes:** `0x40 0x01`
+
+*(Binary: `01 00000 000000001` - `01000000 00000001`)*
 
 ### Body
 
@@ -1167,8 +1168,9 @@ The server responds to the connection request, indicating acceptance or rejectio
 | :-------: | :-----: | :---------: |
 |    `00`   | `00000` | `000000001` |
 
-**Raw header bytes (big-endian):** `0x00 0x01`
-*(Binary: `00 00000 000000001`, split as `00000000 00000001`)*
+**Raw header bytes:** `0x00 0x01`
+
+*(Binary: `00 00000 000000001` - `00000000 00000001`)*
 
 ### Body
 
@@ -1204,6 +1206,7 @@ The client requests a graceful disconnection from the server.
 |    `01`   | `00001` | `000000000` |
 
 **Raw header bytes (big-endian):** `0x42 0x00`
+
 *(Binary: `01 00001 000000000` - `01000010 00000000`)*
 
 ### Body
@@ -1226,7 +1229,7 @@ The server forcibly disconnects (kicks) the client, optionally providing a reaso
 
 Where *N* is the length of the reason string (≤ 510 bytes to respect the 512-byte packet limit).
 
-**Example (8-byte reason):**
+**Example (reason = ratio!!):**
 
 Body length = `8` - `000001000`
 
@@ -1268,7 +1271,8 @@ The client requests the full list of available lobbies (e.g., for a matchmaking 
 |    `01`   | `00010` | `000000000` |
 
 **Raw header bytes:** `0x44 0x00`
-*(Binary: `01 00010 000000000` → `01000100 00000000`)*
+
+*(Binary: `01 00010 000000000` - `01000100 00000000`)*
 
 ### Body
 
@@ -1341,9 +1345,13 @@ Create:
 
 Where *N* = length of lobby name (3-510 bytes).
 
-**Example (name = "R-Type Arena", 13 bytes):**
+**Example (name = "R-Type Arena"):**
+
 Body length = `13` - `000001101`
+
 Header bytes: `0x46 0x0D`
+
+*(Binary: `01 00011 000001101` - `01000110 00001101`)*
 
 ***
 
@@ -1418,6 +1426,7 @@ The client requests to leave a lobby.
 |    `01`   | `00100` | `000000000` |
 
 **Raw header bytes:** `0x44 0x00`
+
 *(Binary: `01 00100 000000000` - `01001000 00000000`)*
 
 ### Body
@@ -1438,7 +1447,7 @@ The server responds to the leave request.
 | :-------: | :-----: | :---------: |
 |    `00`   | `00100` |      1      |
 
-**Example (success):**
+**Example:**
 
 Body length = `1` - `000000001`
 
@@ -1478,6 +1487,7 @@ The client requests to change his ready status.
 |    `01`   | `00101` | `000000000` |
 
 **Raw header bytes:** `0x4A 0x00`
+
 *(Binary: `01 00101 000000000` - `01001010 00000000`)*
 
 ### Body
@@ -1498,7 +1508,7 @@ The server responds to the leave request.
 | :-------: | :-----: | :---------: |
 |    `00`   | `00101` |      1      |
 
-**Example (success):**
+**Example:**
 
 Body length = `1` - `000000001`
 
@@ -1538,7 +1548,8 @@ The client (e.g, game leader) requests to start the game loading procedure.
 |    `01`   | `00110` | `000000000` |
 
 **Raw header bytes:** `0x4C 0x00`
-*(Binary: `01 00101 000000000` - `01001010 00000000`)*
+
+*(Binary: `01 00110 000000000` - `01001010 00000000`)*
 
 ### Body
 
@@ -1562,7 +1573,7 @@ Where *N* = map configuration file content (0-510).
 
 > Since the information on the game map can be very extensive, the `START GAME` command is particularly likely to be split into several commands.
 
-**Example (success):**
+**Example (a lot of map information):**
 
 Body length = `510` - `111111110`
 
@@ -1593,16 +1604,16 @@ This command notify a client or the server that his map loading is done
 
 ### Context
 
-The client (e.g, game leader) requests to start the game loading procedure.
+The client notify the server that his local assets loading is done.
 
 ### Header
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `01`   | `00110` | `000000000` |
+|    `01`   | `00111` | `000000000` |
 
-**Raw header bytes:** `0x4C 0x00`
-*(Binary: `01 00101 000000000` - `01001010 00000000`)*
+**Raw header bytes:** `0x4E 0x00`
+*(Binary: `01 00111 000000000` - `01001010 00000000`)*
 
 ### Body
 
@@ -1614,34 +1625,27 @@ none
 
 ### Context
 
-The server responds to the start request.
+The server notifies the client that the game is starting. This instruction is sent after the server has received "loading done" confirmations from all ready clients.
 
 ### Header
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `00`   | `00110` |     *N*     |
+|    `00`   | `00111` |      0      |
 
-Where *N* = map configuration file content (0-510).
+**Example:**
 
-> Since the information on the game map can be very extensive, the `START GAME` command is particularly likely to be split into several commands.
+Body length = `0` → `000000000`
 
-**Example (success):**
-
-Body length = `510` - `111111110`
-
-Header bytes: `0x0D 0xFE`
-
-*(Binary: `00 00110 111111110` - `00001101 11111110`)*
+Header bytes: `0x0E 0x00`
+*(Binary: `00 00111 000000000` → `00001110 00000000`)*
 
 ### Body
 
-| Size (bytes) |   Type   | Content                        |
-| :----------: | :------: | ------------------------------ |
-|      *N*     | `string` | map configuration file content |
+none
 
 
-# 0x07 - Game start
+# 0x08 - Game start
 
 
 
