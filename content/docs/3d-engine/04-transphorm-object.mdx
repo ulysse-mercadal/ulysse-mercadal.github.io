@@ -33,8 +33,8 @@ bool Renderer3D::setObjectPosition(
 
 **Example**:
 ```cpp
-int id = renderer.addObject("props/crate.obj", {0,0,0});
-renderer.setObjectPosition("props/crate.obj", id, {5.0f, 1.0f, -3.0f});
+int id = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
+renderer.setObjectPosition("assets/indien-qui-danse.fbx", id, {5.0f, 1.0f, -3.0f});
 ```
 
 ---
@@ -53,8 +53,8 @@ bool Renderer3D::setObjectRotation(
 
 **Example**:
 ```cpp
-int id = renderer.addObject("props/crate.obj", {0,0,0});
-renderer.setObjectRotation("props/crate.obj", id, {0.0f, glm::radians(90.0f), 0.0f});
+int id = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
+renderer.setObjectRotation("assets/indien-qui-danse.fbx", id, {0.0f, glm::radians(90.0f), 0.0f});
 ```
 
 ---
@@ -73,9 +73,9 @@ bool Renderer3D::setObjectScale(
 
 **Example**:
 ```cpp
-int id = renderer.addObject("props/crate.obj", {0,0,0});
-renderer.setObjectScale("props/crate.obj", id, glm::vec3(2.0f)); // uniform
-renderer.setObjectScale("props/crate.obj", id, {1.0f, 2.0f, 0.5f}); // non-uniform
+int id = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
+renderer.setObjectScale("assets/indien-qui-danse.fbx", id, glm::vec3(2.0f)); // uniform
+renderer.setObjectScale("assets/indien-qui-danse.fbx", id, {1.0f, 2.0f, 0.5f}); // non-uniform
 ```
 
 ---
@@ -109,9 +109,9 @@ All methods return:
 
 ```cpp
 // In initialization
-int playerModelId = renderer.addObject("characters/player.fbx", {0,0,0});
+int playerModelId = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
 
 // In update loop
 glm::vec3 newPos = playerPosition + movementInput;
-renderer.setObjectPosition("characters/player.fbx", playerModelId, newPos);
+renderer.setObjectPosition("assets/indien-qui-danse.fbx", playerModelId, newPos);
 ```

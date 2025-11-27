@@ -16,7 +16,7 @@ The engine supports **skeletal animation** for FBX models. Animations are manage
 Starts or switches to a named animation for a specific object instance.
 
 ```cpp
-int robotId = renderer.addObject("characters/robot.fbx");
+int robotId = renderer.addObject("assets/indien-qui-danse.fbx");
 renderer.playAnimation(robotId, "Walk", true);
 ```
 
@@ -97,7 +97,7 @@ assert(!names.empty()); // should list "Idle", "Walk", etc.
 ## Example: Animation Controller
 
 ```cpp
-int characterId = renderer.addObject("player.fbx", {0,0,0});
+int characterId = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
 
 // Play idle by default
 renderer.playAnimation(characterId, "Idle", true);
@@ -127,7 +127,7 @@ The engine supports **skeletal animation** for FBX models. Animations are manage
 Starts or switches to a named animation for a specific object instance.
 
 ```cpp
-int robotId = renderer.addObject("characters/robot.fbx");
+int robotId = renderer.addObject("assets/indien-qui-danse.fbx");
 renderer.playAnimation(robotId, "Walk", true);
 ```
 
@@ -201,7 +201,7 @@ for (const auto& name : anims) {
 ## Example: Animation Controller
 
 ```cpp
-int characterId = renderer.addObject("player.fbx", {0,0,0});
+int characterId = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
 
 // Play idle by default
 renderer.playAnimation(characterId, "Idle", true);

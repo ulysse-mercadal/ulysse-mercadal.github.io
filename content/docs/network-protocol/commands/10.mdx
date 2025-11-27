@@ -1,4 +1,39 @@
 ---
 title: 0x10 - Win
-description: set game status to win
+description: Set game status to win.
 ---
+
+# Win (ID 16)
+
+This command is sent by the server to notify clients that someonw have won the game. It marks the end of the match.
+
+> **This command must be sent over TCP.**
+
+> This command can only be sent by the server !
+
+---
+
+## Server -> Client
+
+### Context
+The server notifies the client of a victory condition being met
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `10000` | *N* |
+
+Where *N* = Winner name (3-510).
+
+
+**Example (name = Michel):**
+
+Body length = `7` - `000000111`
+
+**Raw header bytes:** `0x20 0x07`
+
+*(Binary: `00 10000 000000111` - `00100000 00000111`)*
+
+### Body
+
+None

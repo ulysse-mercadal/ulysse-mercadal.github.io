@@ -69,7 +69,7 @@ int Renderer3D::addObject(
 ### Load a static OBJ model
 ```cpp
 int id = renderer.addObject(
-    "assets/crate.obj",
+    "assets/indien-qui-danse.fbx",
     {0, 0, -5});
 
 if (id == -1) {
@@ -80,7 +80,7 @@ if (id == -1) {
 ### Load an animated FBX character
 ```cpp
 int robotId = renderer.addObject(
-    "assets/robot.fbx",
+    "assets/indien-qui-danse.fbx",
     {2.0f, 0.0f, -3.0f},
     {0.0f, glm::radians(90.0f), 0.0f}, // rotate to face camera
     {1.5f} // scale up

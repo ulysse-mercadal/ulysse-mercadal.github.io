@@ -1,4 +1,37 @@
 ---
-title: 0x08 - Game start
-description: start the game at the end of the game initialisation
+title: 0x08 - Game Start
+description: Start the game at the end of the initialization phase.
 ---
+
+# Game Start (ID 8)
+
+This command is sent by the server to officially start the game loop after all players have finished loading.
+
+> **This command must be sent over TCP.**
+
+> This command can only be sent by the server !
+
+---
+
+## Server -> Client
+
+### Context
+The server notifies all connected clients that the match is now starting. This message marks the transition from lobby/loading phase to active gameplay.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `01000` | `000000000` |
+
+
+**Example:**
+
+Body length = `0` - `000000000`
+
+**Raw header bytes:** `0x10 0x00`
+
+*(Binary: `00 01000 000000000` - `00010000 00000000`)*
+
+### Body
+
+None.

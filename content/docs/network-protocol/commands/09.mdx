@@ -1,4 +1,53 @@
 ---
 title: 0x09 - Pause
-description: set game status to pause
+description: Set game status to pause or resume.
 ---
+
+# Pause (ID 9)
+
+This command is used to pause or resume the game state. It can be sent by the server or by a client.
+
+> **This command must be sent over TCP.**
+
+---
+
+## Client -> Server
+
+### Context
+The client requests to toogle the pause / resume status of the current game session.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `01`      | `01001` | `000000000` |
+
+**Raw header bytes:** `0x52 0x00`
+*(Binary: `01 01001 000000001` → `01010010 00000000`)*
+
+### Body
+
+none
+
+---
+
+## Server -> Client
+
+### Context
+The server enforces a pause / resumes toogle for all players.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `01001` | `000000000` |
+
+**Example:**
+
+Body length = `0` - `000000000`
+
+**Raw header bytes:** `0x12 0x00`
+
+*(Binary: `00 01001 000000001` → `00010010 00000000`)*
+
+### Body
+
+none
