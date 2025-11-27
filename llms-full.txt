@@ -1685,7 +1685,7 @@ Body length = `0` - `000000000`
 None.
 
 
-# 0x09 - Pause
+# 0n09 - Pause
 
 
 
@@ -1743,17 +1743,17 @@ Body length = `0` - `000000000`
 none
 
 
-# 0x10 - Win
+# 0x0A - Win
 
 
 
-# Win (ID 16)
+# Win (ID 10)
 
-This command is sent by the server to notify clients that someonw have won the game. It marks the end of the match.
+This command is sent by the server to notify clients that someone has won the game. It marks the end of the match.
 
 > **This command must be sent over TCP.**
 
-> This command can only be sent by the server !
+> This command can only be sent by the server!
 
 ***
 
@@ -1767,28 +1767,28 @@ The server notifies the client of a victory condition being met
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `00`   | `10000` |     *N*     |
+|    `00`   | `01010` |     *N*     |
 
-Where *N* = Winner name (3-510).
+Where *N* = Winner name (3\u2013510).
 
 **Example (name = Michel):**
 
 Body length = `7` - `000000111`
 
-**Raw header bytes:** `0x20 0x07`
+**Raw header bytes:** `0x14 0x07`
 
-*(Binary: `00 10000 000000111` - `00100000 00000111`)*
+*(Binary: `00 01010 000000111` - `00010100 00000111`)*
 
 ### Body
 
 None
 
 
-# 0x11 - Lose
+# 0x0B - Lose
 
 
 
-# Lose (ID 17)
+# Lose (ID 11)
 
 This command is sent by the server to notify a client that they have lost the game. It marks the end of the match for the player.
 
@@ -1808,17 +1808,58 @@ The server notifies the client that a defeat condition has been met
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `00`   | `10001` |     *N*     |
+|    `00`   | `01011` |     *N*     |
 
-Where *N* = Winner name (3-510 bytes), or 0 is no one won.
+Where *N* = Loser name (3–510 bytes), or 0 if no one lost.
 
 **Example (name = Michel):**
 
 Body length = `7` - `000000111`
 
-**Raw header bytes:** `0x21 0x07`
+**Raw header bytes:** `0x16 0x07`
 
-*(Binary: `00 10001 000000111` - `00100001 00000111`)*
+*(Binary: `00 01011 000000111` - `00010110 00000111`)*
+
+### Body
+
+None
+
+
+# 0x0C - Dead
+
+
+
+# Dead (ID 12)
+
+This command is sent by the server to notify clients that a player has died.
+
+> **This command must be sent over TCP.**
+
+> **This command can only be sent by the server!**
+
+***
+
+## Server → Client
+
+### Context
+
+The server notifies clients that a player entity has been destroyed (e.g., hit by enemy, out of bounds).
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `01100` |     *N*     |
+
+Where *N* = Dead player name (3–510 bytes).
+
+**Example (name = "Michel"):**
+
+Body length = `7` → `000000111`
+
+**Raw header bytes:** `0x18 0x07`
+
+*(Binary: `00 01100 000000111` → `00011000 00000111`)*
 
 ### Body
 
