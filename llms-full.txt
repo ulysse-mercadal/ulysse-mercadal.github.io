@@ -20,6 +20,10 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
+# work in progress here
+
+
+
 # 3D Engine Overview
 
 
@@ -956,10 +960,6 @@ if (isWalking) {
 ```
 
 
-# work in progress here
-
-
-
 # Protocol Overview
 
 
@@ -1014,7 +1014,7 @@ This document serves as the foundation for the full R-Type Protocol specificatio
 
 Each message in the R-Type Protocol is identified by an 8-bit **instruction ID**. The same ID may be used for related actions (e.g., client request and server broadcast), and the exact meaning is determined by the header. Below is the complete list of supported commands.
 
-> * All commands respect the **128-byte packet limit**. Large payloads (e.g., long messages) must be split across multiple packets.
+> * All commands respect the **512-byte packet limit**. Large payloads (e.g., long messages) must be split across multiple packets.
 
 > * The same instruction ID is used for both **requests** and **notifications/responses**
 
@@ -1022,24 +1022,25 @@ Each message in the R-Type Protocol is identified by an 8-bit **instruction ID**
 | ---- | --------------- | :------: | ----------------------------------------------------------------------------------------- | :----------: |
 | 0x00 | `CONNECTION`    |   `TCP`  | Initiates connection with the server.                                                     |     `no`     |
 | 0x01 | `DISCONNECTION` |   `TCP`  | Signals disconnection from the server. may trigger a `LEAVE_LOBBY` if player in game      |     `no`     |
-| 0x02 | `JOIN_LOBBY`    |   `TCP`  | Request or signal a new player in the lobby, The server replies with the new player list. |     `yes`    |
-| 0x03 | `LEAVE_LOBBY`   |   `TCP`  | Request to leave the current lobby.                                                       |     `yes`    |
-| 0x04 | `READY`         |   `TCP`  | Change a player’s readiness state in the lobby.                                           |     `yes`    |
-| 0x05 | `START_GAME`    |   `TCP`  | Ask or notify the match is begining.                                                      |     `yes`    |
-| 0x06 | `GAME_LOADED`   |   `TCP`  | Sent once local assets are loaded. Server waits before sending `GAME_START`.              |     `no`     |
-| 0x07 | `GAME_START`    |   `TCP`  | Final signal from the server that the game loop is starting.                              |     `yes`    |
-| 0x08 | `PAUSE`         |   `UDP`  | Update game pause state.                                                                  |     `yes`    |
-| 0x09 | `WIN`           |   `UDP`  | Notifies victory                                                                          |     `yes`    |
-| 0x10 | `LOSE`          |   `UDP`  | Notifies defeat                                                                           |     `yes`    |
-| 0x11 | `DEAD`          |   `UDP`  | Notifies that a player or entity has been destroyed.                                      |     `yes`    |
-| 0x12 | `INPUT`         |   `UDP`  | Reports a player input action, identified by a key for more modularity.                   |     `yes`    |
-| 0x13 | `MOVE`          |   `UDP`  | Updates a player’s position in 3D space (`x, y, z`).                                      |     `yes`    |
-| 0x14 | `SET_POSITION`  |   `UDP`  | Forces an absolute position update.                                                       |     `yes`    |
-| 0x15 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of entities.                                                 |     `no`     |
-| 0x16 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                     | `no` / `yes` |
-| 0x17 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                 |     `yes`    |
-| 0x18 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                 |     `no`     |
-| 0x19 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                      |     `yes`    |
+| 0x02 | `GET_LOBBY`     |   `TCP`  | Request or give all the existing lobby                                                    |     `no`     |
+| 0x03 | `JOIN_LOBBY`    |   `TCP`  | Request or signal a new player in the lobby, The server replies with the new player list. |     `yes`    |
+| 0x04 | `LEAVE_LOBBY`   |   `TCP`  | Request to leave the current lobby.                                                       |     `yes`    |
+| 0x05 | `READY`         |   `TCP`  | Change a player’s readiness state in the lobby.                                           |     `yes`    |
+| 0x06 | `START_GAME`    |   `TCP`  | Ask or notify the match is begining.                                                      |     `yes`    |
+| 0x07 | `GAME_LOADED`   |   `TCP`  | Sent once local assets are loaded. Server waits before sending `GAME_START`.              |     `no`     |
+| 0x08 | `GAME_START`    |   `TCP`  | Final signal from the server that the game loop is starting.                              |     `yes`    |
+| 0x09 | `PAUSE`         |   `UDP`  | Update game pause state.                                                                  |     `yes`    |
+| 0x10 | `WIN`           |   `UDP`  | Notifies victory                                                                          |     `yes`    |
+| 0x11 | `LOSE`          |   `UDP`  | Notifies defeat                                                                           |     `yes`    |
+| 0x12 | `DEAD`          |   `UDP`  | Notifies that a player or entity has been destroyed.                                      |     `yes`    |
+| 0x13 | `INPUT`         |   `UDP`  | Reports a player input action, identified by a key for more modularity.                   |     `yes`    |
+| 0x14 | `MOVE`          |   `UDP`  | Updates a player’s position in 3D space (`x, y, z`).                                      |     `yes`    |
+| 0x15 | `SET_POSITION`  |   `UDP`  | Forces an absolute position update.                                                       |     `yes`    |
+| 0x16 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of entities.                                                 |     `no`     |
+| 0x17 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                     | `no` / `yes` |
+| 0x18 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                 |     `yes`    |
+| 0x19 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                 |     `no`     |
+| 0x20 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                      |     `yes`    |
 
 
 # Packet Structure
@@ -1068,27 +1069,25 @@ Each instruction starts with a **2-byte (16-bit) header**, followed by a body wh
 
 ### Header Layout (2 bytes)
 
-| Bit(s) | Field          | Description                                                                                                      |
-| ------ | -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| 15     | Direction      | `1` = Request (initiated by sender)`0` = Response (reply to a prior request)                                     |
-| 14-7   | Instruction ID | 8-bit unsigned integer (0–255) identifying the message type (e.g., `JOIN_REQUEST`, `PLAYER_INPUT`, `GAME_STATE`) |
-| 6-0    | Body Length    | 7-bit unsigned integer (0–126) indicating the size of the body **in bytes**                                      |
+| Bits  | Field          | Description                                                                                 |
+| ----- | -------------- | ------------------------------------------------------------------------------------------- |
+| 15–14 | Direction      | 2-bit direction code (e.g., `00` = request, `01` = response — semantics defined by context) |
+| 13–9  | Instruction ID | 5-bit unsigned integer (0–31) identifying the command type                                  |
+| 8–0   | Body Length    | 9-bit unsigned integer (0–511) indicating the size of the body **in bytes**                 |
 
-> **Endianness**: The header is encoded in **big-endian** (network byte order).
-
-> The **body length does not include** the 2-byte header... well because a header is not a body :)
+> The **body length does not include** the 2-byte header… well because a header is not a body :)
 
 #### Visual bit layout:
 
 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |   | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 | - | - | - | - | - | - | - | - | - | - | -- | -- | -- | -- | -- | -- | -- |
-| D | I | I | I | I | I | I | I |   | I | L  | L  | L  | L  | L  | L  | L  |
+| D | D | I | I | I | I | I | L |   | L | L  | L  | L  | L  | L  | L  | L  |
 
 Where:
 
-* `D` = Direction bit (bit 15)
-* `I` = Instruction ID (8 bits -> max 255)
-* `L` = Body length (7 bits -> max 126)
+* `D` = Direction (2 bits → 4 possible values)
+* `I` = Instruction ID (5 bits → max 31)
+* `L` = Body length (9 bits → max 511, but effectively **≤126** due to 128-byte packet limit)
 
 ***
 
@@ -1105,12 +1104,196 @@ Where:
 
 ## Example
 
-A `EXAMPLE` instruction (ID = 42) with a 4-byte body sent as a **request**:
+An `EXAMPLE` instruction (ID = 10) with a 4-byte body sent with direction code `01`:
 
-* Direction = `1`
-* ID = `42` → binary `00101010`
-* Body length = `4` → binary `0000100`
+* Direction = `01`
+* ID = `10` → binary `01010`
+* Body length = `4` → binary `000000100`
 
-Header sended: `1001010100000100` = `0x9504`
+Full 16-bit header (big-endian):
+`01 01010 000000100` → grouped as two bytes:
 
-Followed by 4 bytes of input data.
+* Byte 0: `01010100` = `0x54`
+* Byte 1: `00000100` = `0x04`
+
+Header sent: `0x54 0x04`
+Followed by 4 bytes of payload data.
+
+
+# 0x00 - Connection
+
+
+
+# Connection (ID 0)
+
+This command is used to **initiate and accept** a new client connection to the server. It is the **first message** sent by a client after opening a TCP socket. The server responds to indicate whether the connection is accepted (e.g., due to version compatibility or server capacity).
+
+> warning! **This command must be sent over TCP.** It is part of the initial handshake phase.
+
+***
+
+## Client -> Server
+
+### Context
+
+The client attempts to connect to the server and declares the protocol version it supports.
+
+### Header
+
+| Direction (2b) | Code (5b) | Body Length (9b) |
+| :------------: | :-------: | :--------------: |
+|      `01`      |  `00000`  |    `000000001`   |
+
+**Raw header bytes (big-endian):** `0x40 0x01`
+*(Binary: `01 00000 000000001`, split as `01000000 00000001`)*
+
+### Body
+
+| Size (bytes) |   Type  | Content                 |
+| :----------: | :-----: | ----------------------- |
+|       1      | `uint8` | Protocol version number |
+
+***
+
+## Server -> Client
+
+### Context
+
+The server responds to the connection request, indicating acceptance or rejection.
+
+### Header
+
+| Direction (2b) | Code (5b) | Body Length (9b) |
+| :------------: | :-------: | :--------------: |
+|      `00`      |  `00000`  |    `000000001`   |
+
+**Raw header bytes (big-endian):** `0x00 0x01`
+*(Binary: `00 00000 000000001`, split as `00000000 00000001`)*
+
+### Body
+
+| Size (bytes) |   Type  | Content                                           |
+| :----------: | :-----: | ------------------------------------------------- |
+|       1      | `uint8` | Connection status: `1` = accepted, `0` = rejected |
+
+
+# 0x01 - disconnection
+
+
+
+***
+
+# Description
+
+This command is used to request a disconnection or to kick a client from the server.
+
+> warning! this command use `TCP`
+
+***
+
+## client -> server
+
+### context:
+
+the client want to leave the server
+
+> if the player is in a game, you may want to send a `GAME LEAVE` command first
+
+### header:
+
+| direction |    code    | body size |
+| :-------: | :--------: | :-------: |
+|    `1`    | `00000010` | `0000000` |
+
+### body:
+
+none
+
+***
+
+## server -> client
+
+### context:
+
+the server kick a player
+
+### header:
+
+| direction |    code    | body size |
+| :-------: | :--------: | :-------: |
+|    `0`    | `00000010` |  variable |
+
+### body:
+
+| size (in bytes) |   type   | content |
+| :-------------: | :------: | :-----: |
+|     variable    | `string` |  reason |
+
+
+# 0x03 - join lobby
+
+
+
+***
+
+# Description
+
+This command is used to request to join or crate a lobby.
+
+> warning! this command use `TCP`
+
+***
+
+## client -> server
+
+### context:
+
+the client want to join or create a game lobby
+
+### header:
+
+to join an existing lobby:
+
+| direction |    code    | body size |
+| :-------: | :--------: | :-------: |
+|    `1`    | `00000011` | `0000001` |
+
+to create a new lobby:
+
+| direction |    code    | body size |
+| :-------: | :--------: | :-------: |
+|    `1`    | `00000011` |  variable |
+
+### body:
+
+to join an existing lobby:
+
+| size (in bytes) |  type |  content |
+| :-------------: | :---: | :------: |
+|       `1`       | `int` | lobby id |
+
+to create a new lobby:
+
+| size (in bytes) |   type   |   content  |
+| :-------------: | :------: | :--------: |
+|     variable    | `string` | lobby name |
+
+***
+
+## server -> client
+
+### context:
+
+the server repond to a join lobby request
+
+### header:
+
+| direction |    code    | body size |
+| :-------: | :--------: | :-------: |
+|    `0`    | `00000011` | `0000001` |
+
+### body:
+
+| size (in bytes) |   type   | content |
+| :-------------: | :------: | :-----: |
+|     variable    | `string` |  reason |
