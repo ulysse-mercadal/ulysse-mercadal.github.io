@@ -71,16 +71,16 @@ The server responds to the join/create request.
 
 Where *N* = length of response body (0-510).
 
-**Example (success, empty body):**
+**Example (success, no message):**
 
-Body length = `0` - `000000000`
+Body length = `1` - `000000001`
 
-Header bytes: `0x06 0x00`
+Header bytes: `0x06 0x01`
 
-*(Binary: `00 00011 000000000` - `00000110 00000000`)*
+*(Binary: `00 00011 000000000` - `00000110 00000001`)*
 
 ### Body
 | Size (bytes) | Type     | Content                                  |
 |:------------:|:--------:|------------------------------------------|
-| 1            | `bool`   | Connection status: `1` = accepted, `0` = rejected  |
+| 1/8           | `bool`   | Connection status: `1` = accepted, `0` = rejected  |
 | *N* > 0      | `string` | **Additional message** (e.g., "Lobby full, wrong name") |

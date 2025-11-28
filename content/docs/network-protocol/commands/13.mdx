@@ -1,38 +1,66 @@
 ---
 title: 0x0D - Input
-description: Reports a player input action (press or release) with a key ID.
+description: Reports a player input action and receives execution status.
 ---
 
 # Input (ID 13)
 
-This command is sent by the client to report a player input action.
+This command is used to send a player input (press/release) and receive immediate feedback from the server on whether the action was applied, denied, or requires follow-up.
 
 > **This command must be sent over UDP.**
 
-> **This command can only be sent by the client!**
-
 ---
 
-## Client → Server
+## Client -> Server
 
 ### Context
-The client sends a real-time input event to the server.
+The client sends a real-time input event.
 
 ### Header
 | Direction | Code  | Body Length |
 |:---------:|:-----:|:-----------:|
-| `01`      | `01101` | `000000101` |
+| `01`      | `01101` | `000000010` |
 
-**Example:**
+**Example**
 
-Body length = `5` → `000000101`
+Body length = `2` -> `000000010`
 
-**Raw header bytes:** `0x5A 0x05`
-
-*(Binary: `01 01101 000000010` → `01011010 00000101`)*
+**Raw header bytes:** `0x5A 0x02`
+*(Binary: `01 01101 000000010` - `01011010 00000010`)*
 
 ### Body
-| Size (bytes) | Type    | Content                         |
-|:------------:|:-------:|:--------------------------------|
-| 4            | `int`   | Key ID                            |
-| 1            | `bool`  | Action: `1` = press, `0` = release |
+| Size (bytes) | Type    | Content |
+|:------------:|:-------:|:--------|
+| 1            | `uint8` | Key ID  |
+| 1/8          | `bool`  | Action (`1`=press, `0`=release)  |
+
+---
+
+## Server -> Client
+
+### Context
+
+The server responds with execution status:
+- `FAILED`: unotorized / input
+- `SUCESS`: action processed
+- `LATER`: action sucess, but handeled in a future command (e.g., will send `MOVE` later)
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `01101` | `000000010` |
+
+**Example (key_id = 5, press, status = `LATER`):**
+
+Body length = `2` - `000000010`
+
+**Raw header bytes:** `0x1A 0x02`
+
+*(Binary: `00 01101 000000010` - `00011010 00000010`)*
+
+### Body
+| Size (bytes) | Type    | Content |
+|:------------:|:-------:|:--------|
+| 1            | `uint8` | Key ID (echoed) |
+| 1/8          | `bool`  | Action (echoed) |
+| 2/8          | `enum`  | Status (`00`=`FAILED`, `01`=`SUCESS`, `10`=`LATER`) |

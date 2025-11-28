@@ -1,4 +1,40 @@
 ---
-title: work in progress here
-description: work in progress here
+title: 0x0E - Move
+description: Updates a player’s position in 3D space (x, y, z) using scaled integers.
 ---
+
+# Move (ID 14)
+
+This command is sent by the server to notify a client of a player's updated position in 3D space. Positions are encoded as 16-bit signed integers scaled by 0.01 for bandwidth efficiency.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+---
+
+## Server -> Client
+
+### Context
+The server broadcasts the new coordinates of a player entity after simulating movement. World positions are converted to scaled integers before transmission.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `01110` | `000000111` |
+
+**Example**
+
+Body length = `7` -> `000000111`
+
+**Raw header bytes:** `0x1C 0x07`
+
+*(Binary: `00 01110 000000111` - `00011100 00000111`)*
+
+### Body
+| Size (bytes) | Type     | Content                                |
+|:------------:|:--------:|:---------------------------------------|
+| 1            | `uint8`  | Player ID                              |
+| 2            | `int16`  | X position (world = value × 0.01)      |
+| 2            | `int16`  | Y position (world = value × 0.01)      |
+| 2            | `int16`  | Z position (world = value × 0.01)      |
