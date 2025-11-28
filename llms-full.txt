@@ -20,6 +20,10 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
+# work in progress here
+
+
+
 # 3D Engine Overview
 
 
@@ -956,10 +960,6 @@ if (isWalking) {
 ```
 
 
-# work in progress here
-
-
-
 # Protocol Overview
 
 
@@ -1036,10 +1036,10 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 | 0x0D | `INPUT`         |   `UDP`  | Reports a player input action, identified by a key for more modularity.                    |     `yes`    |
 | 0x0E | `MOVE`          |   `UDP`  | Updates a player’s position in 3D space (`x, y, z`).                                       |     `yes`    |
 | 0x0F | `SET_POSITION`  |   `UDP`  | Forces an absolute position update.                                                        |     `yes`    |
-| 0x10 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of entities.                                                  |     `no`     |
+| 0x10 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of an entity.                                                 |     `no`     |
 | 0x11 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                      | `no` / `yes` |
 | 0x12 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                  |     `yes`    |
-| 0x13 | `ABILITY`       |   `UDP`  | notify that a player use one of his abilities.                                             |     `no`     |
+| 0x13 | `ABILITY`       |   `UDP`  | notify that a entity use one of his abilities.                                             |     `no`     |
 | 0x14 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                  |     `no`     |
 | 0x15 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                       |     `yes`    |
 
@@ -1727,7 +1727,7 @@ The client requests to toogle the pause / resume status of the current game sess
 |    `01`   | `01001` | `000000000` |
 
 **Raw header bytes:** `0x52 0x00`
-*(Binary: `01 01001 000000001` → `01010010 00000000`)*
+*(Binary: `01 01001 000000001` - `01010010 00000000`)*
 
 ### Body
 
@@ -1753,7 +1753,7 @@ Body length = `0` - `000000000`
 
 **Raw header bytes:** `0x12 0x00`
 
-*(Binary: `00 01001 000000001` → `00010010 00000000`)*
+*(Binary: `00 01001 000000001` - `00010010 00000000`)*
 
 ### Body
 
@@ -1860,7 +1860,7 @@ This command is sent by the server to notify clients that a player has died.
 
 ***
 
-## Server → Client
+## Server -> Client
 
 ### Context
 
@@ -1876,11 +1876,11 @@ Where *N* = Dead player name (3–510 bytes).
 
 **Example (name = "Michel"):**
 
-Body length = `7` → `000000111`
+Body length = `7` - `000000111`
 
 **Raw header bytes:** `0x18 0x07`
 
-*(Binary: `00 01100 000000111` → `00011000 00000111`)*
+*(Binary: `00 01100 000000111` - `00011000 00000111`)*
 
 ### body
 
@@ -1998,20 +1998,125 @@ Body length = `7` -> `000000111`
 
 ### Body
 
+| Size (bytes) |   Type  | Content                            |
+| :----------: | :-----: | :--------------------------------- |
+|       1      | `uint8` | Player ID                          |
+|       2      | `int16` | X position (world = value \* 0.01) |
+|       2      | `int16` | Y position (world = value \* 0.01) |
+|       2      | `int16` | Z position (world = value \* 0.01) |
+
+
+# 0x0F - Set position
+
+
+
+# Set Position (ID 15)
+
+This command is sent by the server to force an absolute position update for a player. World positions are converted to scaled integers before transmission.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+***
+
+## Server -> Client
+
+### Context
+
+The server sets a player's position to an exact location in the world, bypassing everything.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `01111` | `000000111` |
+
+**Example**
+
+Body length = `7` - `000000111`
+
+**Raw header bytes:** `0x1E 0x07`
+
+*(Binary: `00 01111 000000111` - `00011110 00000111`)*
+
+### Body
+
+| Size (bytes) |   Type  | Content                            |
+| :----------: | :-----: | :--------------------------------- |
+|       1      | `uint8` | Player ID                          |
+|       2      | `int16` | X position (world = value \* 0.01) |
+|       2      | `int16` | Y position (world = value \* 0.01) |
+|       2      | `int16` | Z position (world = value \* 0.01) |
+
+
+# 0x10 - Get coords
+
+
+
+# Get Coords (ID 16)
+
+This command is sent by the client to request the current position of an entity. The server responds with his positions. World positions are converted to scaled integers before transmission.
+
+> **This command must be sent over UDP.**
+
+***
+
+## Client -> Server
+
+### Context
+
+The client requests up-to-date coordinates of an entity.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `10000` | `000000001` |
+
+**Example**
+
+Body length = `1` - `000000001`
+
+**Raw header bytes:** `0x60 0x01`
+*(Binary: `01 10000 000000000` - `01100000 00000001`)*
+
+### Body
+
+| Size (bytes) |   Type  | Content   |
+| :----------: | :-----: | :-------- |
+|       1      | `uint8` | Entity ID |
+
+***
+
+## Server -> Client
+
+### Context
+
+The server send the coordinates of the asked entity
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `10000` |      7      |
+
+**Example:**
+
+Body length = `7` - `000000111`
+
+**Raw header bytes:** `0x20 0x07`
+
+*(Binary: `00 10000 000000111` - `00100000 00000111`)*
+
+### Body
+
 | Size (bytes) |   Type  | Content                           |
 | :----------: | :-----: | :-------------------------------- |
-|       1      | `uint8` | Player ID                         |
+|       1      | `uint8` | Entity ID (echoed)                |
 |       2      | `int16` | X position (world = value × 0.01) |
 |       2      | `int16` | Y position (world = value × 0.01) |
 |       2      | `int16` | Z position (world = value × 0.01) |
-
-
-# work in progress here
-
-
-
-# work in progress here
-
 
 
 # work in progress here
