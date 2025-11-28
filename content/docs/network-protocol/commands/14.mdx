@@ -23,7 +23,7 @@ The server broadcasts the new coordinates of a player entity after simulating mo
 |:---------:|:-----:|:-----------:|
 | `00`      | `01110` | `000000111` |
 
-**Example**
+### Example:
 
 Body length = `7` -> `000000111`
 
@@ -35,6 +35,6 @@ Body length = `7` -> `000000111`
 | Size (bytes) | Type     | Content                                |
 |:------------:|:--------:|:---------------------------------------|
 | 1            | `uint8`  | Player ID                              |
-| 2            | `int16`  | X position (world = value × 0.01)      |
-| 2            | `int16`  | Y position (world = value × 0.01)      |
-| 2            | `int16`  | Z position (world = value × 0.01)      |
+| 2            | `int16`  | X position (world = value * 0.01)      |
+| 2            | `int16`  | Y position (world = value * 0.01)      |
+| 2            | `int16`  | Z position (world = value * 0.01)      |

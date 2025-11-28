@@ -21,11 +21,12 @@ The client sends a real-time input event.
 |:---------:|:-----:|:-----------:|
 | `01`      | `01101` | `000000010` |
 
-**Example**
+### Example:
 
 Body length = `2` -> `000000010`
 
 **Raw header bytes:** `0x5A 0x02`
+
 *(Binary: `01 01101 000000010` - `01011010 00000010`)*
 
 ### Body
@@ -50,7 +51,7 @@ The server responds with execution status:
 |:---------:|:-----:|:-----------:|
 | `00`      | `01101` | `000000010` |
 
-**Example (key_id = 5, press, status = `LATER`):**
+### Example (key_id = 5, press, status = `LATER`):
 
 Body length = `2` - `000000010`
 

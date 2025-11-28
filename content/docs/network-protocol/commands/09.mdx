@@ -22,7 +22,8 @@ The client requests to toogle the pause / resume status of the current game sess
 | `01`      | `01001` | `000000000` |
 
 **Raw header bytes:** `0x52 0x00`
-*(Binary: `01 01001 000000001` → `01010010 00000000`)*
+
+*(Binary: `01 01001 000000001` - `01010010 00000000`)*
 
 ### Body
 
@@ -40,13 +41,13 @@ The server enforces a pause / resumes toogle for all players.
 |:---------:|:-----:|:-----------:|
 | `00`      | `01001` | `000000000` |
 
-**Example:**
+### Example:
 
 Body length = `0` - `000000000`
 
 **Raw header bytes:** `0x12 0x00`
 
-*(Binary: `00 01001 000000001` → `00010010 00000000`)*
+*(Binary: `00 01001 000000001` - `00010010 00000000`)*
 
 ### Body
 

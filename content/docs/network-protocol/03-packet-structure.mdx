@@ -39,10 +39,10 @@ Each command starts with a **2-byte (16-bit) header**, followed by a body whose 
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 |D|D|I|I|I|I|I|L| |L|L|L|L|L|L|L|L|
 
-Where:
-- `D` = Direction (2 bits -> 4 possible values)
-- `I` = command ID (5 bits -> max 31)
-- `L` = Body length (9 bits -> max 511,)
+> Where:
+> - `D` = Direction (2 bits -> 4 possible values)
+> - `I` = command ID (5 bits -> max 31)
+> - `L` = Body length (9 bits -> max 511,)
 ---
 
 ## Usage Across Transports

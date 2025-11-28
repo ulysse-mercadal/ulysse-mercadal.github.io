@@ -23,9 +23,9 @@ The server notifies the client that a defeat condition has been met
 |:---------:|:-----:|:-----------:|
 | `00`      | `01011` | *N*       |
 
-Where *N* = Loser name (3–510 bytes), or 0 if no one lost.
+> Where *N* = Loser name (1–20 bytes), or 0 if no one lost.
 
-**Example (name = Michel):**
+### Example (name = Michel):
 
 Body length = `7` - `000000111`
 

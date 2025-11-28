@@ -1,4 +1,64 @@
 ---
-title: work in progress here
-description: work in progress here
+title: 0x10 - Get coords
+description: Requests current coordinates of an entity.
 ---
+
+# Get Coords (ID 16)
+
+This command is sent by the client to request the current position of an entity. The server responds with his positions. World positions are converted to scaled integers before transmission.
+
+> **This command must be sent over UDP.**
+
+---
+
+## Client -> Server
+
+### Context
+The client requests up-to-date coordinates of an entity.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `01`      | `10000` | `000000001` |
+
+### Example:
+
+Body length = `1` - `000000001`
+
+**Raw header bytes:** `0x60 0x01`
+
+*(Binary: `01 10000 000000000` - `01100000 00000001`)*
+
+### Body
+
+| Size (bytes) | Type     | Content                                |
+|:------------:|:--------:|:---------------------------------------|
+| 1            | `uint8`  | Entity ID                              |
+
+---
+
+## Server -> Client
+
+### Context
+The server send the coordinates of the asked entity
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `10000` | 7       |
+
+### Example:
+
+Body length = `7` - `000000111`
+
+**Raw header bytes:** `0x20 0x07`
+
+*(Binary: `00 10000 000000111` - `00100000 00000111`)*
+
+### Body
+| Size (bytes) | Type     | Content                                |
+|:------------:|:--------:|:---------------------------------------|
+| 1            | `uint8`  | Entity ID (echoed)                     |
+| 2            | `int16`  | X position (world = value × 0.01)      |
+| 2            | `int16`  | Y position (world = value × 0.01)      |
+| 2            | `int16`  | Z position (world = value × 0.01)      |

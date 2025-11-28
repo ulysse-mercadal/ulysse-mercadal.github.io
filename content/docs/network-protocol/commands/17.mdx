@@ -1,4 +1,67 @@
 ---
-title: work in progress here
-description: work in progress here
+title: 0x11 - Player Info
+description: Requests or provides detailed player data (name, position, score).
 ---
+
+# Player Info (ID 17)
+
+This command is used by the client to request information about another player. The server responds with the player's name, position, and score.
+
+> **This command must be sent over UDP.**
+
+---
+
+## Client -> Server
+
+### Context
+The client requests detailed information about another player.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `01`      | `10001` | `000000001` |
+
+### Example:
+
+Body length = `1` - `000000001`
+
+**Raw header bytes:** `0x62 0x01`
+
+*(Binary: `01 10001 000000001` - `01100010 00000001`)*
+
+### Body
+| Size (bytes) | Type    | Content     |
+|:------------:|:-------:|:------------|
+| 1            | `uint8` | Player ID   |
+
+---
+
+## Server -> Client
+
+### Context
+The server sends detailed information about the requested player.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `10001` | 11+*N*    |
+
+> Where *N* =  player name length (1 - 20).
+
+### Example (name = "Michel", *N*=6):
+
+Body length = `11 + 6` - `17` - `000010001`
+
+**Raw header bytes:** `0x22 0x11`
+
+*(Binary: `00 10001 000010001` - `00100010 00010001`)*
+
+### Body
+| Size (bytes) | Type     | Content                                |
+|:------------:|:--------:|:---------------------------------------|
+| 1            | `uint8`  | Player ID                              |
+| *N*          | `string` | Player name                            |
+| 2            | `int16`  | X position (world = value * 0.01)      |
+| 2            | `int16`  | Y position (world = value * 0.01)      |
+| 2            | `int16`  | Z position (world = value * 0.01)      |
+| 4            | `uint32` | Score                                  |

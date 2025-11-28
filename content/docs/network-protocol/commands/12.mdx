@@ -13,7 +13,7 @@ This command is sent by the server to notify clients that a player has died.
 
 ---
 
-## Server → Client
+## Server -> Client
 
 ### Context
 The server notifies clients that a player entity has been destroyed (e.g., hit by enemy, out of bounds).
@@ -23,15 +23,15 @@ The server notifies clients that a player entity has been destroyed (e.g., hit b
 |:---------:|:-----:|:-----------:|
 | `00`      | `01100` | *N*         |
 
-Where *N* = Dead player name (3–510 bytes).
+> Where *N* = Dead player name (1–20 bytes).
 
-**Example (name = "Michel"):**
+### Example (name = "Michel"):
 
-Body length = `7` → `000000111`
+Body length = `7` - `000000111`
 
 **Raw header bytes:** `0x18 0x07`
 
-*(Binary: `00 01100 000000111` → `00011000 00000111`)*
+*(Binary: `00 01100 000000111` - `00011000 00000111`)*
 
 ### body
 

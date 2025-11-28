@@ -25,6 +25,7 @@ Join:
 | `01`           | `00011`   | `000000001`      |
 
 **Raw header bytes:** `0x46 0x01`
+
 *(Binary: `01 00011 000000001` - `01000110 00000001`)*
 
 Create:
@@ -33,9 +34,9 @@ Create:
 |:--------------:|:---------:|:----------------:|
 | `01`           | `00011`   | *N*              |
 
-Where *N* = length of lobby name (3-510 bytes).
+> Where *M* = length of Lobby name (1-20 bytes).
 
-**Example (name = "R-Type Arena"):**
+### Example (name = "R-Type Arena"):
 
 Body length = `13` - `000001101`
 
@@ -51,11 +52,19 @@ Join:
 | Size (bytes) | Type    | Content        |
 |:------------:|:-------:|----------------|
 | 1            | `uint8` | Lobby ID       |
+| *M*          | `string`| Player Name    |
+
+> Where *M* = length of Player name (1-20 bytes).
 
 Create:
 | Size (bytes) | Type     | Content             |
 |:------------:|:--------:|---------------------|
 | *N* (3-510)  | `string` | UTF-8 lobby name    |
+| *M*          | `string`| Player Name    |
+
+> Where *N* = length of Player name (1-20 bytes).
+
+> Where *M* = length of Lobby name (1-20 bytes).
 
 ---
 
@@ -71,7 +80,7 @@ The server responds to the join/create request.
 
 Where *N* = length of response body (0-510).
 
-**Example (success, no message):**
+### Example (success, no message):
 
 Body length = `1` - `000000001`
 

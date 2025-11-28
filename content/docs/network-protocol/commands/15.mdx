@@ -1,4 +1,40 @@
 ---
-title: work in progress here
-description: work in progress here
+title: 0x0F - Set position
+description: Forces an absolute position update.
 ---
+
+# Set Position (ID 15)
+
+This command is sent by the server to force an absolute position update for a player. World positions are converted to scaled integers before transmission.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+---
+
+## Server -> Client
+
+### Context
+The server sets a player's position to an exact location in the world, bypassing everything.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `01111` | `000000111` |
+
+### Example:
+
+Body length = `7` - `000000111`
+
+**Raw header bytes:** `0x1E 0x07`
+
+*(Binary: `00 01111 000000111` - `00011110 00000111`)*
+
+### Body
+| Size (bytes) | Type     | Content                                |
+|:------------:|:--------:|:---------------------------------------|
+| 1            | `uint8`  | Player ID                              |
+| 2            | `int16`  | X position (world = value * 0.01)      |
+| 2            | `int16`  | Y position (world = value * 0.01)      |
+| 2            | `int16`  | Z position (world = value * 0.01)      |
