@@ -20,10 +20,6 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
-# work in progress here
-
-
-
 # 3D Engine Overview
 
 
@@ -960,6 +956,10 @@ if (isWalking) {
 ```
 
 
+# work in progress here
+
+
+
 # Protocol Overview
 
 
@@ -1259,9 +1259,9 @@ Header bytes: `0x02 0x08`
 
 ### Body
 
-| Size (bytes) |   Type   | Content              |
-| :----------: | :------: | -------------------- |
-|  *N* (0–510) | `string` | UTF-8 reason message |
+| Size (bytes) |   Type   | Content        |
+| :----------: | :------: | -------------- |
+|  *N* (0–510) | `string` | Reason message |
 
 > If the body length is `0`, no reason is provided (silent kick).
 
@@ -1320,10 +1320,10 @@ The server sends the current list of lobbies in response to a `GET_LOBBY` reques
 
 The body is a **concatenated list of lobby entries**. Each entry has the following layout:
 
-| Size (bytes) |   Type   | Content          |
-| :----------: | :------: | ---------------- |
-|       3      |  `uint8` | player number    |
-|      *M*     | `string` | UTF-8 lobby name |
+| Size (bytes) |   Type   | Content       |
+| :----------: | :------: | ------------- |
+|       3      |  `uint8` | player number |
+|      *M*     | `string` | Lobby name    |
 
 > * If no lobbies exist, the body is **empty** (*N* = 0).
 
@@ -1389,10 +1389,10 @@ Join:
 
 Create:
 
-| Size (bytes) |   Type   | Content          |
-| :----------: | :------: | ---------------- |
-|  *N* (3-510) | `string` | UTF-8 lobby name |
-|      *M*     | `string` | Player Name      |
+| Size (bytes) |   Type   | Content     |
+| :----------: | :------: | ----------- |
+|  *N* (3-510) | `string` | Lobby name  |
+|      *M*     | `string` | Player Name |
 
 > Where *N* = length of Player name (1-20 bytes).
 
@@ -2408,4 +2408,4 @@ Body length = `9` - `000001001`
 | :----------: | :------: | :------------------------------------------- |
 |       2      | `uint16` | Entity ID (`0` = system)                     |
 |      1/8     |  `bool`  | Entity type (`1` = player, `0` = NPC/system) |
-|      *N*     | `string` | Message text (UTF-8, not null-terminated)    |
+|      *N*     | `string` | Message text                                 |
