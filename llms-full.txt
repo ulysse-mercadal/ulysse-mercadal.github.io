@@ -1043,6 +1043,21 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 | 0x14 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                       |     `yes`    |
 
 
+# Protocole limitations
+
+
+
+***
+
+## param size
+
+* this ptococole can't have more than `255` **versions id**, because it's a `uint8`
+* a server can't host more than `255` **players**, because it's a `uint8`
+* a server can't host more than `255` **lobbys**, because it's a `uint8`
+* a lobby can't host more than `255` **players**, because it's a `uint8`
+* you can't handle more than `INT_MAX` input **keys id**, because it's a `int`
+
+
 # Packet Structure
 
 
@@ -1150,9 +1165,9 @@ The client attempts to connect to the server and declares the protocol version i
 
 ### Body
 
-| Size (bytes) |  Type | Content                 |
-| :----------: | :---: | ----------------------- |
-|       1      | `int` | Protocol version number |
+| Size (bytes) |   Type  | Content                 |
+| :----------: | :-----: | ----------------------- |
+|       1      | `uint8` | Protocol version number |
 
 ***
 
@@ -1300,10 +1315,10 @@ Where *M* is the total size of the lobby name.
 
 The body is a **concatenated list of lobby entries**. Each entry has the following layout:
 
-| Offset | Size (bytes) |   Type   | Content          |
-| :----: | :----------: | :------: | ---------------- |
-|    0   |       3      |   `int`  | player number    |
-|    1   |      *M*     | `string` | UTF-8 lobby name |
+| Size (bytes) |   Type   | Content          |
+| :----------: | :------: | ---------------- |
+|       3      |  `uint8` | player number    |
+|      *M*     | `string` | UTF-8 lobby name |
 
 > * If no lobbies exist, the body is **empty** (*N* = 0).
 
@@ -1359,9 +1374,9 @@ Header bytes: `0x46 0x0D`
 
 Join:
 
-| Size (bytes) |  Type | Content  |
-| :----------: | :---: | -------- |
-|       1      | `int` | Lobby ID |
+| Size (bytes) |   Type  | Content  |
+| :----------: | :-----: | -------- |
+|       1      | `uint8` | Lobby ID |
 
 Create:
 
