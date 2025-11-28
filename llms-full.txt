@@ -20,6 +20,10 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
+# work in progress here
+
+
+
 # 3D Engine Overview
 
 
@@ -956,10 +960,6 @@ if (isWalking) {
 ```
 
 
-# work in progress here
-
-
-
 # Protocol Overview
 
 
@@ -1018,29 +1018,29 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 
 > * The same command ID is used for both **requests** and **notifications/responses**
 
-| ID   | Name            | protocol | Description                                                                               |   Broadcast  |
-| ---- | --------------- | :------: | ----------------------------------------------------------------------------------------- | :----------: |
-| 0x00 | `CONNECTION`    |   `TCP`  | Initiates connection with the server.                                                     |     `no`     |
-| 0x01 | `DISCONNECTION` |   `TCP`  | Signals disconnection from the server. may trigger a `LEAVE_LOBBY` if player in game      |     `no`     |
-| 0x02 | `GET_LOBBY`     |   `TCP`  | Request or give all the existing lobby                                                    |     `no`     |
-| 0x03 | `JOIN_LOBBY`    |   `TCP`  | Request or signal a new player in the lobby, The server replies with the new player list. |     `yes`    |
-| 0x04 | `LEAVE_LOBBY`   |   `TCP`  | Request to leave the current lobby.                                                       |     `yes`    |
-| 0x05 | `READY`         |   `TCP`  | Change a player’s readiness state in the lobby.                                           |     `yes`    |
-| 0x06 | `START_GAME`    |   `TCP`  | Ask or notify the match is begining.                                                      |     `yes`    |
-| 0x07 | `GAME_LOADED`   |   `TCP`  | Sent once local assets are loaded. Server waits before sending `GAME_START`.              |     `no`     |
-| 0x08 | `GAME_START`    |   `TCP`  | Final signal from the server that the game loop is starting.                              |     `yes`    |
-| 0x09 | `PAUSE`         |   `TCP`  | Update game pause state.                                                                  |     `yes`    |
-| 0x0A | `WIN`           |   `TCP`  | Notifies victory                                                                          |     `yes`    |
-| 0x0B | `LOSE`          |   `TCP`  | Notifies defeat                                                                           |     `yes`    |
-| 0x0C | `DEAD`          |   `TCP`  | Notifies that a player or entity has been destroyed.                                      |     `yes`    |
-| 0x0D | `INPUT`         |   `UDP`  | Reports a player input action, identified by a key for more modularity.                   |     `yes`    |
-| 0x0E | `MOVE`          |   `UDP`  | Updates a player’s position in 3D space (`x, y, z`).                                      |     `yes`    |
-| 0x0F | `SET_POSITION`  |   `UDP`  | Forces an absolute position update.                                                       |     `yes`    |
-| 0x10 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of entities.                                                 |     `no`     |
-| 0x11 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                     | `no` / `yes` |
-| 0x12 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                 |     `yes`    |
-| 0x13 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                 |     `no`     |
-| 0x14 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                      |     `yes`    |
+| ID   | Name            | protocol | Description                                                                                |   Broadcast  |
+| ---- | --------------- | :------: | ------------------------------------------------------------------------------------------ | :----------: |
+| 0x00 | `CONNECTION`    |   `TCP`  | Initiates connection with the server.                                                      |     `no`     |
+| 0x01 | `DISCONNECTION` |   `TCP`  | Signals disconnection from the server. may trigger a `LEAVE_LOBBY` if player in game       |     `no`     |
+| 0x02 | `GET_LOBBY`     |   `TCP`  | Request or give all the existing lobby                                                     |     `no`     |
+| 0x03 | `JOIN_LOBBY`    |   `TCP`  | Request or1 signal a new player in the lobby, The server replies with the new player list. |     `yes`    |
+| 0x04 | `LEAVE_LOBBY`   |   `TCP`  | Request to leave the current lobby.                                                        |     `yes`    |
+| 0x05 | `READY`         |   `TCP`  | Change a player’s readiness state in the lobby.                                            |     `yes`    |
+| 0x06 | `START_GAME`    |   `TCP`  | Ask or notify the match is begining.                                                       |     `yes`    |
+| 0x07 | `GAME_LOADED`   |   `TCP`  | Sent once local assets are loaded. Server waits before sending `GAME_START`.               |     `no`     |
+| 0x08 | `GAME_START`    |   `TCP`  | Final signal from the server that the game loop is starting.                               |     `yes`    |
+| 0x09 | `PAUSE`         |   `TCP`  | Update game pause state.                                                                   |     `yes`    |
+| 0x0A | `WIN`           |   `TCP`  | Notifies victory                                                                           |     `yes`    |
+| 0x0B | `LOSE`          |   `TCP`  | Notifies defeat                                                                            |     `yes`    |
+| 0x0C | `DEAD`          |   `TCP`  | Notifies that a player or entity has been destroyed.                                       |     `yes`    |
+| 0x0D | `INPUT`         |   `UDP`  | Reports a player input action, identified by a key for more modularity.                    |     `yes`    |
+| 0x0E | `MOVE`          |   `UDP`  | Updates a player’s position in 3D space (`x, y, z`).                                       |     `yes`    |
+| 0x0F | `SET_POSITION`  |   `UDP`  | Forces an absolute position update.                                                        |     `yes`    |
+| 0x10 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of entities.                                                  |     `no`     |
+| 0x11 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                      | `no` / `yes` |
+| 0x12 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                  |     `yes`    |
+| 0x13 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                  |     `no`     |
+| 0x14 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                       |     `yes`    |
 
 
 # Packet Structure
@@ -1864,3 +1864,35 @@ Body length = `7` → `000000111`
 ### Body
 
 None
+
+
+# work in progress here
+
+
+
+# work in progress here
+
+
+
+# work in progress here
+
+
+
+# work in progress here
+
+
+
+# work in progress here
+
+
+
+# work in progress here
+
+
+
+# work in progress here
+
+
+
+# work in progress here
+
