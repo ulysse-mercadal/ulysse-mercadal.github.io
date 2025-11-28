@@ -20,6 +20,10 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
+# work in progress here
+
+
+
 # 3D Engine Overview
 
 
@@ -954,10 +958,6 @@ if (isWalking) {
     }
 }
 ```
-
-
-# work in progress here
-
 
 
 # Protocol Overview
@@ -2362,7 +2362,7 @@ The client sends a chat message or request to the server.
 | :-------: | :-----: | :---------: |
 |    `01`   | `10101` |     *N*     |
 
-> Where *N* message length (1-127 bytes).
+> Where *N* = message length (1-127 bytes).
 
 ### Example (message = "Hello", L=5):
 
