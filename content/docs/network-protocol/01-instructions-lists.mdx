@@ -17,7 +17,7 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 | 0x00  | `CONNECTION`       | `TCP`| Initiates connection with the server. | `no`|
 | 0x01  | `DISCONNECTION`    | `TCP`| Signals disconnection from the server. may trigger a `LEAVE_LOBBY` if player in game | `no` |
 | 0x02  | `GET_LOBBY`        | `TCP`| Request or give all the existing lobby | `no` |
-| 0x03  | `JOIN_LOBBY`       | `TCP`| Request or signal a new player in the lobby, The server replies with the new player list. | `yes` |
+| 0x03  | `JOIN_LOBBY`       | `TCP`| Request or1 signal a new player in the lobby, The server replies with the new player list. | `yes` |
 | 0x04  | `LEAVE_LOBBY`      | `TCP`| Request to leave the current lobby. | `yes` |
 | 0x05  | `READY`            | `TCP`| Change a player’s readiness state in the lobby. | `yes` |
 | 0x06  | `START_GAME`       | `TCP`| Ask or notify the match is begining. | `yes` |
