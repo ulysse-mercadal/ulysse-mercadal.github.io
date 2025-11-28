@@ -1057,6 +1057,8 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 * a server can't host more than `255` **lobbys**, because it's a `uint8`
 * a lobby can't host more than `255` **players**, because it's a `uint8`
 * you can't handle more than `255` input **keys id**, because it's a `uint8`
+* a **player name** must be a `string` with a length between `1`, and `20` chars
+* a **lobby name** must be a `string` with a length between `1`, and `20` chars
 
 
 # Packet Structure
@@ -1099,11 +1101,11 @@ Each command starts with a **2-byte (16-bit) header**, followed by a body whose 
 | - | - | - | - | - | - | - | - | - | - | -- | -- | -- | -- | -- | -- | -- |
 | D | D | I | I | I | I | I | L |   | L | L  | L  | L  | L  | L  | L  | L  |
 
-Where:
-
-* `D` = Direction (2 bits -> 4 possible values)
-* `I` = command ID (5 bits -> max 31)
-* `L` = Body length (9 bits -> max 511,)
+> Where:
+>
+> * `D` = Direction (2 bits -> 4 possible values)
+> * `I` = command ID (5 bits -> max 31)
+> * `L` = Body length (9 bits -> max 511,)
 
 ***
 
@@ -1243,9 +1245,9 @@ The server forcibly disconnects (kicks) the client, optionally providing a reaso
 | :-------: | :-----: | :---------: |
 |    `00`   | `00001` |     *N*     |
 
-Where *N* is the length of the reason string (≤ 510 bytes to respect the 512-byte packet limit).
+> Where *N* is the length of the reason string (≤ 510 bytes to respect the 512-byte packet limit).
 
-**Example (reason = ratio!!):**
+### Example (reason = ratio!!):
 
 Body length = `8` - `000001000`
 
@@ -1308,9 +1310,9 @@ The server sends the current list of lobbies in response to a `GET_LOBBY` reques
 | :-------: | :-----: | :----------: |
 |    `00`   | `00010` | *N\*(M + 3)* |
 
-Where *N* is the total size of the lobby list.
+> Where *N* is the total size of the lobby list.
 
-Where *M* is the total size of the lobby name.
+> Where *M* is the total size of the lobby name.
 
 ### Body
 
@@ -1351,6 +1353,7 @@ Join:
 |    `01`   | `00011` | `000000001` |
 
 **Raw header bytes:** `0x46 0x01`
+
 *(Binary: `01 00011 000000001` - `01000110 00000001`)*
 
 Create:
@@ -1359,9 +1362,9 @@ Create:
 | :-------: | :-----: | :---------: |
 |    `01`   | `00011` |     *N*     |
 
-Where *N* = length of lobby name (3-510 bytes).
+> Where *M* = length of Lobby name (1-20 bytes).
 
-**Example (name = "R-Type Arena"):**
+### Example (name = "R-Type Arena"):
 
 Body length = `13` - `000001101`
 
@@ -1375,15 +1378,23 @@ Header bytes: `0x46 0x0D`
 
 Join:
 
-| Size (bytes) |   Type  | Content  |
-| :----------: | :-----: | -------- |
-|       1      | `uint8` | Lobby ID |
+| Size (bytes) |   Type   | Content     |
+| :----------: | :------: | ----------- |
+|       1      |  `uint8` | Lobby ID    |
+|      *M*     | `string` | Player Name |
+
+> Where *M* = length of Player name (1-20 bytes).
 
 Create:
 
 | Size (bytes) |   Type   | Content          |
 | :----------: | :------: | ---------------- |
 |  *N* (3-510) | `string` | UTF-8 lobby name |
+|      *M*     | `string` | Player Name      |
+
+> Where *N* = length of Player name (1-20 bytes).
+
+> Where *M* = length of Lobby name (1-20 bytes).
 
 ***
 
@@ -1401,7 +1412,7 @@ The server responds to the join/create request.
 
 Where *N* = length of response body (0-510).
 
-**Example (success, no message):**
+### Example (success, no message):
 
 Body length = `1` - `000000001`
 
@@ -1463,7 +1474,7 @@ The server responds to the leave request.
 | :-------: | :-----: | :---------: |
 |    `00`   | `00100` | `000000001` |
 
-**Example:**
+### Example:
 
 Body length = `1` - `000000001`
 
@@ -1524,7 +1535,7 @@ The server responds to the leave request.
 | :-------: | :-----: | :---------: |
 |    `00`   | `00101` | `000000001` |
 
-**Example:**
+### Example:
 
 Body length = `1` - `000000001`
 
@@ -1585,11 +1596,11 @@ The server responds to the start request.
 | :-------: | :-----: | :---------: |
 |    `00`   | `00110` |     *N*     |
 
-Where *N* = map configuration file content (0-510).
+> Where *N* = map configuration file content (0-510).
 
 > Since the information on the game map can be very extensive, the `START GAME` command is particularly likely to be split into several commands.
 
-**Example (a lot of map information):**
+### Example (a lot of map information):
 
 Body length = `510` - `111111110`
 
@@ -1650,7 +1661,7 @@ The server notifies the client that the game is starting. This command is sent a
 | :-------: | :-----: | :---------: |
 |    `00`   | `00111` | `000000000` |
 
-**Example:**
+### Example:
 
 Body length = `0` - `000000000`
 
@@ -1689,7 +1700,7 @@ The server notifies all connected clients that the match is now starting. This m
 | :-------: | :-----: | :---------: |
 |    `00`   | `01000` | `000000000` |
 
-**Example:**
+### Example:
 
 Body length = `0` - `000000000`
 
@@ -1727,6 +1738,7 @@ The client requests to toogle the pause / resume status of the current game sess
 |    `01`   | `01001` | `000000000` |
 
 **Raw header bytes:** `0x52 0x00`
+
 *(Binary: `01 01001 000000001` - `01010010 00000000`)*
 
 ### Body
@@ -1747,7 +1759,7 @@ The server enforces a pause / resumes toogle for all players.
 | :-------: | :-----: | :---------: |
 |    `00`   | `01001` | `000000000` |
 
-**Example:**
+### Example:
 
 Body length = `0` - `000000000`
 
@@ -1786,9 +1798,9 @@ The server notifies the client of a victory condition being met
 | :-------: | :-----: | :---------: |
 |    `00`   | `01010` |     *N*     |
 
-Where *N* = Winner name (3 - 510).
+> Where *N* = Winner name (1 - 20).
 
-**Example (name = Michel):**
+### Example (name = Michel):
 
 Body length = `7` - `000000111`
 
@@ -1829,9 +1841,9 @@ The server notifies the client that a defeat condition has been met
 | :-------: | :-----: | :---------: |
 |    `00`   | `01011` |     *N*     |
 
-Where *N* = Loser name (3–510 bytes), or 0 if no one lost.
+> Where *N* = Loser name (1–20 bytes), or 0 if no one lost.
 
-**Example (name = Michel):**
+### Example (name = Michel):
 
 Body length = `7` - `000000111`
 
@@ -1872,9 +1884,9 @@ The server notifies clients that a player entity has been destroyed (e.g., hit b
 | :-------: | :-----: | :---------: |
 |    `00`   | `01100` |     *N*     |
 
-Where *N* = Dead player name (3–510 bytes).
+> Where *N* = Dead player name (1–20 bytes).
 
-**Example (name = "Michel"):**
+### Example (name = "Michel"):
 
 Body length = `7` - `000000111`
 
@@ -1913,11 +1925,12 @@ The client sends a real-time input event.
 | :-------: | :-----: | :---------: |
 |    `01`   | `01101` | `000000010` |
 
-**Example**
+### Example:
 
 Body length = `2` -> `000000010`
 
 **Raw header bytes:** `0x5A 0x02`
+
 *(Binary: `01 01101 000000010` - `01011010 00000010`)*
 
 ### Body
@@ -1945,7 +1958,7 @@ The server responds with execution status:
 | :-------: | :-----: | :---------: |
 |    `00`   | `01101` | `000000010` |
 
-**Example (key\_id = 5, press, status = `LATER`):**
+### Example (key\_id = 5, press, status = `LATER`):
 
 Body length = `2` - `000000010`
 
@@ -1988,7 +2001,7 @@ The server broadcasts the new coordinates of a player entity after simulating mo
 | :-------: | :-----: | :---------: |
 |    `00`   | `01110` | `000000111` |
 
-**Example**
+### Example:
 
 Body length = `7` -> `000000111`
 
@@ -2032,7 +2045,7 @@ The server sets a player's position to an exact location in the world, bypassing
 | :-------: | :-----: | :---------: |
 |    `00`   | `01111` | `000000111` |
 
-**Example**
+### Example:
 
 Body length = `7` - `000000111`
 
@@ -2074,11 +2087,12 @@ The client requests up-to-date coordinates of an entity.
 | :-------: | :-----: | :---------: |
 |    `01`   | `10000` | `000000001` |
 
-**Example**
+### Example:
 
 Body length = `1` - `000000001`
 
 **Raw header bytes:** `0x60 0x01`
+
 *(Binary: `01 10000 000000000` - `01100000 00000001`)*
 
 ### Body
@@ -2101,7 +2115,7 @@ The server send the coordinates of the asked entity
 | :-------: | :-----: | :---------: |
 |    `00`   | `10000` |      7      |
 
-**Example:**
+### Example:
 
 Body length = `7` - `000000111`
 
@@ -2119,8 +2133,78 @@ Body length = `7` - `000000111`
 |       2      | `int16` | Z position (world = value × 0.01) |
 
 
-# work in progress here
+# 0x11 - Player Info
 
+
+
+# Player Info (ID 17)
+
+This command is used by the client to request information about another player. The server responds with the player's name, position, and score.
+
+> **This command must be sent over UDP.**
+
+***
+
+## Client -> Server
+
+### Context
+
+The client requests detailed information about another player.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `10001` | `000000001` |
+
+### Example:
+
+Body length = `1` - `000000001`
+
+**Raw header bytes:** `0x62 0x01`
+
+*(Binary: `01 10001 000000001` - `01100010 00000001`)*
+
+### Body
+
+| Size (bytes) |   Type  | Content   |
+| :----------: | :-----: | :-------- |
+|       1      | `uint8` | Player ID |
+
+***
+
+## Server -> Client
+
+### Context
+
+The server sends detailed information about the requested player.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `10001` |    11+*N*   |
+
+> Where *N* =  player name length (1 - 20).
+
+### Example (name = "Michel", *N*=6):
+
+Body length = `11 + 6` - `17` - `000010001`
+
+**Raw header bytes:** `0x22 0x11`
+
+*(Binary: `00 10001 000010001` - `00100010 00010001`)*
+
+### Body
+
+| Size (bytes) |   Type   | Content                            |
+| :----------: | :------: | :--------------------------------- |
+|       1      |  `uint8` | Player ID                          |
+|      *N*     | `string` | Player name                        |
+|       2      |  `int16` | X position (world = value \* 0.01) |
+|       2      |  `int16` | Y position (world = value \* 0.01) |
+|       2      |  `int16` | Z position (world = value \* 0.01) |
+|       4      | `uint32` | Score                              |
 
 
 # work in progress here
