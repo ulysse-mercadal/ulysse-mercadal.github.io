@@ -37,9 +37,10 @@ none
 The server notifies the client that the game is starting. This command is sent after the server has received "loading done" confirmations from all ready clients.
 
 ### Header
+
 | Direction | Code  | Body Length |
 |:--------------:|:---------:|:----------------:|
-| `00`           | `00111`   | 0                |
+| `00`           | `00111`   | `000000000`      |
 
 **Example:**
 

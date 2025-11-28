@@ -1,4 +1,38 @@
 ---
-title: work in progress here
-description: work in progress here
+title: 0x0D - Input
+description: Reports a player input action (press or release) with a key ID.
 ---
+
+# Input (ID 13)
+
+This command is sent by the client to report a player input action.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the client!**
+
+---
+
+## Client → Server
+
+### Context
+The client sends a real-time input event to the server.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `01`      | `01101` | `000000101` |
+
+**Example:**
+
+Body length = `5` → `000000101`
+
+**Raw header bytes:** `0x5A 0x05`
+
+*(Binary: `01 01101 000000010` → `01011010 00000101`)*
+
+### Body
+| Size (bytes) | Type    | Content                         |
+|:------------:|:-------:|:--------------------------------|
+| 4            | `int`   | Key ID                            |
+| 1            | `bool`  | Action: `1` = press, `0` = release |

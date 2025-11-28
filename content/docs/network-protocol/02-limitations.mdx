@@ -1,0 +1,13 @@
+---
+title: Protocole limitations
+description: limitations of our rtype network protocol
+---
+---
+
+## param size
+
+- this ptococole can't have more than `255` **versions id**, because it's a `uint8`
+- a server can't host more than `255` **players**, because it's a `uint8`
+- a server can't host more than `255` **lobbys**, because it's a `uint8`
+- a lobby can't host more than `255` **players**, because it's a `uint8`
+- you can't handle more than `INT_MAX` input **keys id**, because it's a `int`
