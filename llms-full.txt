@@ -20,10 +20,6 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
-# work in progress here
-
-
-
 # 3D Engine Overview
 
 
@@ -960,6 +956,10 @@ if (isWalking) {
 ```
 
 
+# work in progress here
+
+
+
 # Protocol Overview
 
 
@@ -1445,7 +1445,7 @@ The server responds to the leave request.
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `00`   | `00100` |      1      |
+|    `00`   | `00100` | `000000001` |
 
 **Example:**
 
@@ -1506,7 +1506,7 @@ The server responds to the leave request.
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `00`   | `00101` |      1      |
+|    `00`   | `00101` | `000000001` |
 
 **Example:**
 
@@ -1631,7 +1631,7 @@ The server notifies the client that the game is starting. This command is sent a
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `00`   | `00111` |      0      |
+|    `00`   | `00111` | `000000000` |
 
 **Example:**
 
@@ -1781,7 +1781,9 @@ Body length = `7` - `000000111`
 
 ### Body
 
-None
+| Size (bytes) |   Type   | Content         |
+| :----------: | :------: | :-------------- |
+|      *N*     | `string` | Win player name |
 
 
 # 0x0B - Lose
@@ -1822,7 +1824,9 @@ Body length = `7` - `000000111`
 
 ### Body
 
-None
+| Size (bytes) |   Type   | Content           |
+| :----------: | :------: | :---------------- |
+|      *N*     | `string` | Loser player name |
 
 
 # 0x0C - Dead
@@ -1861,13 +1865,53 @@ Body length = `7` → `000000111`
 
 *(Binary: `00 01100 000000111` → `00011000 00000111`)*
 
+### body
+
+| Size (bytes) |   Type   | Content          |
+| :----------: | :------: | :--------------- |
+|      *N*     | `string` | Dead player name |
+
+
+# 0x0D - Input
+
+
+
+# Input (ID 13)
+
+This command is sent by the client to report a player input action.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the client!**
+
+***
+
+## Client → Server
+
+### Context
+
+The client sends a real-time input event to the server.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `01101` | `000000101` |
+
+**Example:**
+
+Body length = `5` → `000000101`
+
+**Raw header bytes:** `0x5A 0x05`
+
+*(Binary: `01 01101 000000010` → `01011010 00000101`)*
+
 ### Body
 
-None
-
-
-# work in progress here
-
+| Size (bytes) |  Type  | Content                            |
+| :----------: | :----: | :--------------------------------- |
+|       4      |  `int` | Key ID                             |
+|       1      | `bool` | Action: `1` = press, `0` = release |
 
 
 # work in progress here
