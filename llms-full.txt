@@ -20,10 +20,6 @@ This documentation covers the three core components of our implementation:
 </Cards>
 
 
-# work in progress here
-
-
-
 # 3D Engine Overview
 
 
@@ -960,6 +956,10 @@ if (isWalking) {
 ```
 
 
+# work in progress here
+
+
+
 # Protocol Overview
 
 
@@ -1039,7 +1039,7 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 | 0x10 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of an entity.                                                 |     `no`     |
 | 0x11 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                      | `no` / `yes` |
 | 0x12 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                  |     `yes`    |
-| 0x13 | `ABILITY`       |   `UDP`  | notify that a entity use one of his abilities.                                             |     `no`     |
+| 0x13 | `ABILITY`       |   `UDP`  | notify that a entity use one of his abilities.                                             |     `yes`    |
 | 0x14 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                  |     `no`     |
 | 0x15 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                       |     `yes`    |
 
@@ -1059,6 +1059,8 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 * you can't handle more than `255` input **keys id**, because it's a `uint8`
 * a **player name** must be a `string` with a length between `1`, and `20` chars
 * a **lobby name** must be a `string` with a length between `1`, and `20` chars
+* a level can't have more than `65534` **npcs** because it's a `uint16`
+* a player can't take more than `65534`  **dammages** because it's a `uint16`
 
 
 # Packet Structure
@@ -2207,8 +2209,49 @@ Body length = `11 + 6` - `17` - `000010001`
 |       4      | `uint32` | Score                              |
 
 
-# work in progress here
+# 0x12 - Damage
 
+
+
+# Damage (ID 18)
+
+This command is sent by the server to notify clients that an entity has taken damages
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+***
+
+## Server -> Client
+
+### Context
+
+The server broadcasts a damage event (e.g., player hit by enemy fire).
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `10010` |      7      |
+
+### Example:
+
+Body length = `7` - `000000111`
+
+**Raw header bytes:** `0x24 0x07`
+
+*(Binary: `00 10010 000000111` - `00100100 00000111`)*
+
+### Body
+
+| Size (bytes) |   Type   | Content                               |
+| :----------: | :------: | :------------------------------------ |
+|       1      |  `uint8` | Victim ID                             |
+|       1      |  `uint8` | Victim type (`1` = player, `0` = npc) |
+|       1      |  `uint8` | Source ID                             |
+|       2      | `uint16` | Source type (`1` = player, `0` = npc) |
+|       2      | `uint16` | Damage amount                         |
 
 
 # work in progress here
