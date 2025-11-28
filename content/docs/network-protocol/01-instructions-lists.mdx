@@ -33,5 +33,6 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 | 0x10  | `GET_COORDS`       | `UDP`| Requests current coordinates of entities. | `no` |
 | 0x11  | `PLAYER_INFO`      | `UDP`| Requests or give detailed player data | `no` / `yes`
 | 0x12  | `DAMAGE`           | `UDP`| Notifies that an entity has taken damage. | `yes` |
-| 0x13  | `SCORE`            | `UDP`| Updates a player’s score. | `no`
-| 0x14  | `MESSAGE`          | `UDP`| Sends a text message | `yes`
+| 0x13  | `ABILITY`          | `UDP`| notify that a player use one of his abilities. | `no`
+| 0x14  | `SCORE`            | `UDP`| Updates a player’s score. | `no`
+| 0x15  | `MESSAGE`          | `UDP`| Sends a text message | `yes`
