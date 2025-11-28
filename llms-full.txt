@@ -2215,7 +2215,7 @@ Body length = `11 + 6` - `17` - `000010001`
 
 # Damage (ID 18)
 
-This command is sent by the server to notify clients that an entity has taken damages
+This command is sent by the server to notify clients that an entity has taken damage.
 
 > **This command must be sent over UDP.**
 
@@ -2247,15 +2247,54 @@ Body length = `7` - `000000111`
 
 | Size (bytes) |   Type   | Content                               |
 | :----------: | :------: | :------------------------------------ |
-|       1      |  `uint8` | Victim ID                             |
-|       1      |  `uint8` | Victim type (`1` = player, `0` = npc) |
-|       1      |  `uint8` | Source ID                             |
-|       2      | `uint16` | Source type (`1` = player, `0` = npc) |
+|       2      | `uint16` | Victim ID                             |
+|      1/8     |  `bool`  | Victim type (`1` = player, `0` = NPC) |
+|       2      | `uint16` | Source ID                             |
+|      1/8     |  `bool`  | Source type (`1` = player, `0` = NPC) |
 |       2      | `uint16` | Damage amount                         |
 
 
-# work in progress here
+# 0x13 - Ability
 
+
+
+# Ability (ID 19)
+
+This command is sent by the server to notify clients that an entity has used an ability.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+***
+
+## Server -> Client
+
+### Context
+
+The server broadcasts an ability usage event
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `10011` |      5      |
+
+### Example:
+
+Body length = `3` - `000000101`
+
+**Raw header bytes:** `0x26 0x05`
+
+*(Binary: `00 10011 000000011` - `00100110 00000101`)*
+
+### Body
+
+| Size (bytes) |   Type   | Content                               |
+| :----------: | :------: | :------------------------------------ |
+|       2      | `uint16` | Entity ID                             |
+|      1/8     |  `bool`  | Entity type (`1` = player, `0` = NPC) |
+|       2      | `uint16` | Ability ID                            |
 
 
 # work in progress here
