@@ -1,4 +1,66 @@
 ---
-title: work in progress here
-description: work in progress here
+title: 0x15 - Message
+description: Sends a text message.
 ---
+
+# Message (ID 21)
+
+This command is used to send and broadcast text messages. The client sends a message to the server, and the server rebroadcasts it to all clients.
+
+> **This command must be sent over UDP.**
+
+---
+
+## Client -> Server
+
+### Context
+The client sends a chat message or request to the server.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `01`      | `10101` | *N*        |
+
+> Where *N* message length (1-127 bytes).
+
+### Example (message = "Hello", L=5):
+
+Body length = `5` - `000000101`
+
+**Raw header bytes:** `0x6A 0x05`
+
+*(Binary: `01 10101 000000101` - `01101010 00000101`)*
+
+### Body
+| Size (bytes) | Type    | Content                     |
+|:------------:|:-------:|:----------------------------|
+| *N*          | `string`| Message text                |
+
+---
+
+## Server -> Client
+
+### Context
+The server broadcasts a message received from a client or generated internally.
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `10101` | 3+*N*         |
+
+> Where *N* = message length (1–127 bytes).
+
+### Example (player 42 says "EZ u noob", L=3):
+
+Body length = `9` - `000001001`
+
+**Raw header bytes:** `0x2A 0x06`
+
+*(Binary: `00 10101 000001001` - `00101010 00001001`)*
+
+### Body
+| Size (bytes) | Type    | Content                     |
+|:------------:|:-------:|:----------------------------|
+| 2            | `uint16`| Entity ID (`0` = system)    |
+| 1/8          | `bool`  | Entity type (`1` = player, `0` = NPC/system) |
+| *N*          | `string`| Message text (UTF-8, not null-terminated) |

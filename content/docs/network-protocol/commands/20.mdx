@@ -1,4 +1,37 @@
 ---
-title: work in progress here
-description: work in progress here
+title: 0x14 - Score
+description: Updates a player score.
 ---
+
+# Score (ID 20)
+
+This command is sent by the server to notify clients of a player's updated score.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+---
+
+## Server -> Client
+
+### Context
+The server broadcasts a score update
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `10100` | `6`       |
+
+### Example:
+
+Body length = `7` - `000000110`
+
+**Raw header bytes:** `0x28 0x06`
+*(Binary: `00 10100 000000111` - `00101000 00000110`)*
+
+### Body
+| Size (bytes) | Type    | Content                     |
+|:------------:|:-------:|:----------------------------|
+| 2            | `uint16`| Entity ID                   |
+| 4            | `uint32`| Score                       |
