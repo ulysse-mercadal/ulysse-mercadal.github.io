@@ -1039,8 +1039,9 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 | 0x10 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of entities.                                                  |     `no`     |
 | 0x11 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                      | `no` / `yes` |
 | 0x12 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                  |     `yes`    |
-| 0x13 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                  |     `no`     |
-| 0x14 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                       |     `yes`    |
+| 0x13 | `ABILITY`       |   `UDP`  | notify that a player use one of his abilities.                                             |     `no`     |
+| 0x14 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                  |     `no`     |
+| 0x15 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                       |     `yes`    |
 
 
 # Protocole limitations
@@ -1055,7 +1056,7 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 * a server can't host more than `255` **players**, because it's a `uint8`
 * a server can't host more than `255` **lobbys**, because it's a `uint8`
 * a lobby can't host more than `255` **players**, because it's a `uint8`
-* you can't handle more than `INT_MAX` input **keys id**, because it's a `int`
+* you can't handle more than `255` input **keys id**, because it's a `uint8`
 
 
 # Packet Structure
@@ -1191,7 +1192,7 @@ The server responds to the connection request, indicating acceptance or rejectio
 
 | Size (bytes) |  Type  | Content                                           |
 | :----------: | :----: | ------------------------------------------------- |
-|       1      | `bool` | Connection status: `1` = accepted, `0` = rejected |
+|      1/8     | `bool` | Connection status: `1` = accepted, `0` = rejected |
 
 
 # 0x01 - Disconnection
@@ -1400,19 +1401,19 @@ The server responds to the join/create request.
 
 Where *N* = length of response body (0-510).
 
-**Example (success, empty body):**
+**Example (success, no message):**
 
-Body length = `0` - `000000000`
+Body length = `1` - `000000001`
 
-Header bytes: `0x06 0x00`
+Header bytes: `0x06 0x01`
 
-*(Binary: `00 00011 000000000` - `00000110 00000000`)*
+*(Binary: `00 00011 000000000` - `00000110 00000001`)*
 
 ### Body
 
 | Size (bytes) |   Type   | Content                                                 |
 | :----------: | :------: | ------------------------------------------------------- |
-|       1      |  `bool`  | Connection status: `1` = accepted, `0` = rejected       |
+|      1/8     |  `bool`  | Connection status: `1` = accepted, `0` = rejected       |
 |    *N* > 0   | `string` | **Additional message** (e.g., "Lobby full, wrong name") |
 
 
@@ -1474,7 +1475,7 @@ Header bytes: `0x04 0x01`
 
 | Size (bytes) |  Type  | Content                                     |
 | :----------: | :----: | ------------------------------------------- |
-|       1      | `bool` | leaving status: `1` = accepted, `0` = error |
+|      1/8     | `bool` | leaving status: `1` = accepted, `0` = error |
 
 
 # 0x05 - Ready
@@ -1535,7 +1536,7 @@ Header bytes: `0x0A 0x01`
 
 | Size (bytes) |  Type  | Content                                     |
 | :----------: | :----: | ------------------------------------------- |
-|       1      | `bool` | leaving status: `1` = accepted, `0` = error |
+|      1/8     | `bool` | leaving status: `1` = accepted, `0` = error |
 
 
 # 0x06 - Start game
@@ -1628,6 +1629,7 @@ The client notify the server that his local assets loading is done.
 |    `01`   | `00111` | `000000000` |
 
 **Raw header bytes:** `0x4E 0x00`
+
 *(Binary: `01 00111 000000000` - `01001010 00000000`)*
 
 ### Body
@@ -1784,7 +1786,7 @@ The server notifies the client of a victory condition being met
 | :-------: | :-----: | :---------: |
 |    `00`   | `01010` |     *N*     |
 
-Where *N* = Winner name (3\u2013510).
+Where *N* = Winner name (3 - 510).
 
 **Example (name = Michel):**
 
@@ -1893,40 +1895,115 @@ Body length = `7` → `000000111`
 
 # Input (ID 13)
 
-This command is sent by the client to report a player input action.
+This command is used to send a player input (press/release) and receive immediate feedback from the server on whether the action was applied, denied, or requires follow-up.
 
 > **This command must be sent over UDP.**
 
-> **This command can only be sent by the client!**
-
 ***
 
-## Client → Server
+## Client -> Server
 
 ### Context
 
-The client sends a real-time input event to the server.
+The client sends a real-time input event.
 
 ### Header
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `01`   | `01101` | `000000101` |
+|    `01`   | `01101` | `000000010` |
 
-**Example:**
+**Example**
 
-Body length = `5` → `000000101`
+Body length = `2` -> `000000010`
 
-**Raw header bytes:** `0x5A 0x05`
-
-*(Binary: `01 01101 000000010` → `01011010 00000101`)*
+**Raw header bytes:** `0x5A 0x02`
+*(Binary: `01 01101 000000010` - `01011010 00000010`)*
 
 ### Body
 
-| Size (bytes) |  Type  | Content                            |
-| :----------: | :----: | :--------------------------------- |
-|       4      |  `int` | Key ID                             |
-|       1      | `bool` | Action: `1` = press, `0` = release |
+| Size (bytes) |   Type  | Content                         |
+| :----------: | :-----: | :------------------------------ |
+|       1      | `uint8` | Key ID                          |
+|      1/8     |  `bool` | Action (`1`=press, `0`=release) |
+
+***
+
+## Server -> Client
+
+### Context
+
+The server responds with execution status:
+
+* `FAILED`: unotorized / input
+* `SUCESS`: action processed
+* `LATER`: action sucess, but handeled in a future command (e.g., will send `MOVE` later)
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `01101` | `000000010` |
+
+**Example (key\_id = 5, press, status = `LATER`):**
+
+Body length = `2` - `000000010`
+
+**Raw header bytes:** `0x1A 0x02`
+
+*(Binary: `00 01101 000000010` - `00011010 00000010`)*
+
+### Body
+
+| Size (bytes) |   Type  | Content                                             |
+| :----------: | :-----: | :-------------------------------------------------- |
+|       1      | `uint8` | Key ID (echoed)                                     |
+|      1/8     |  `bool` | Action (echoed)                                     |
+|      2/8     |  `enum` | Status (`00`=`FAILED`, `01`=`SUCESS`, `10`=`LATER`) |
+
+
+# 0x0E - Move
+
+
+
+# Move (ID 14)
+
+This command is sent by the server to notify a client of a player's updated position in 3D space. Positions are encoded as 16-bit signed integers scaled by 0.01 for bandwidth efficiency.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+***
+
+## Server -> Client
+
+### Context
+
+The server broadcasts the new coordinates of a player entity after simulating movement. World positions are converted to scaled integers before transmission.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `01110` | `000000111` |
+
+**Example**
+
+Body length = `7` -> `000000111`
+
+**Raw header bytes:** `0x1C 0x07`
+
+*(Binary: `00 01110 000000111` - `00011100 00000111`)*
+
+### Body
+
+| Size (bytes) |   Type  | Content                           |
+| :----------: | :-----: | :-------------------------------- |
+|       1      | `uint8` | Player ID                         |
+|       2      | `int16` | X position (world = value × 0.01) |
+|       2      | `int16` | Y position (world = value × 0.01) |
+|       2      | `int16` | Z position (world = value × 0.01) |
 
 
 # work in progress here
