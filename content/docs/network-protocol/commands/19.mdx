@@ -1,4 +1,39 @@
 ---
-title: work in progress here
-description: work in progress here
+title: 0x13 - Ability
+description: Notifies that an entity used one of its abilities.
 ---
+
+# Ability (ID 19)
+
+This command is sent by the server to notify clients that an entity has used an ability.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+---
+
+## Server -> Client
+
+### Context
+The server broadcasts an ability usage event
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `10011` | 5 |
+
+### Example:
+
+Body length = `3` - `000000101`
+
+**Raw header bytes:** `0x26 0x05`
+
+*(Binary: `00 10011 000000011` - `00100110 00000101`)*
+
+### Body
+| Size (bytes) | Type    | Content                     |
+|:------------:|:-------:|:----------------------------|
+| 2            | `uint16` | Entity ID                  |
+| 1/8          | `bool` | Entity type (`1` = player, `0` = NPC) |
+| 2            | `uint16` | Ability ID                 |

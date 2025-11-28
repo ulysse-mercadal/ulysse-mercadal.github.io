@@ -1,4 +1,41 @@
 ---
-title: work in progress here
-description: work in progress here
+title: 0x12 - Damage
+description: Notifies that an entity has taken damage.
 ---
+
+# Damage (ID 18)
+
+This command is sent by the server to notify clients that an entity has taken damage.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+---
+
+## Server -> Client
+
+### Context
+The server broadcasts a damage event (e.g., player hit by enemy fire).
+
+### Header
+| Direction | Code  | Body Length |
+|:---------:|:-----:|:-----------:|
+| `00`      | `10010` | 7         |
+
+### Example:
+
+Body length = `7` - `000000111`
+
+**Raw header bytes:** `0x24 0x07`
+
+*(Binary: `00 10010 000000111` - `00100100 00000111`)*
+
+### Body
+| Size (bytes) | Type    | Content                                  |
+|:-----------:|:-------:|:-----------------------------------------|
+| 2               | `uint16`| Victim ID                                |
+| 1/8             | `bool`  | Victim type (`1` = player, `0` = NPC)    |
+| 2               | `uint16`| Source ID                                |
+| 1/8             | `bool`  | Source type (`1` = player, `0` = NPC)    |
+| 2               | `uint16`| Damage amount                            |
