@@ -21,7 +21,7 @@ The client sends a chat message or request to the server.
 |:---------:|:-----:|:-----------:|
 | `01`      | `10101` | *N*        |
 
-> Where *N* message length (1-127 bytes).
+> Where *N* = message length (1-127 bytes).
 
 ### Example (message = "Hello", L=5):
 
@@ -63,4 +63,4 @@ Body length = `9` - `000001001`
 |:------------:|:-------:|:----------------------------|
 | 2            | `uint16`| Entity ID (`0` = system)    |
 | 1/8          | `bool`  | Entity type (`1` = player, `0` = NPC/system) |
-| *N*          | `string`| Message text (UTF-8, not null-terminated) |
+| *N*          | `string`| Message text |
