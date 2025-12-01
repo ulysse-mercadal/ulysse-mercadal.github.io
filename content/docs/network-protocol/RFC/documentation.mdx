@@ -1,0 +1,1766 @@
+---
+title: RFC format documentation
+description: the complete rfc formated documentation
+---
+```
+Network Working Group                                 Ulysse Mercadal
+Request for Comments: XXXX                               Epitech Lyon
+Category: Informational                              28 November 2025
+
+
+                     Protocole R-Type v1.0.1
+
+
+Status of this Memo
+
+   This memo provides information for the Internet community. It does
+   not specify an Internet standard of any kind. Distribution of this
+   memo is unlimited.
+
+Copyright Notice
+
+   Copyright (C) 2025. All Rights Reserved.
+
+Abstract
+
+   This document specifies the R-Type Protocol, a lightweight,
+   modular network protocol designed to enable real-time multiplayer
+   communication between game clients and dedicated servers. The
+   protocol uses TCP for initial handshake and UDP for gameplay data
+   transmission.
+
+
+Table of Contents
+
+   1. Introduction to the R-Type Protocol . . . . . . . . . . . . . . 3
+   2. Goals . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 3
+   3. Communication Flow  . . . . . . . . . . . . . . . . . . . . . . 3
+   4. Header and Body . . . . . . . . . . . . . . . . . . . . . . . . 4
+   5. Protocol Commands . . . . . . . . . . . . . . . . . . . . . . 4-6
+   6. Protocol Limitations  . . . . . . . . . . . . . . . . . . . . 6-7
+   7. Packet Structure  . . . . . . . . . . . . . . . . . . . . . . 7-8
+   8. Command Format  . . . . . . . . . . . . . . . . . . . . . . . 7-9
+   9. Usage Across Transports . . . . . . . . . . . . . . . . . . . 8-9
+   10. Command Specifications . . . . . . . . . . . . . . . . . .  9-31
+       10.1. Connection (0x00)  . . . . . . . . . . . . . . . . .  9-10
+       10.2. Disconnection (0x01) . . . . . . . . . . . . . . . . 10-11
+       10.3. Get Lobby (0x02) . . . . . . . . . . . . . . . . . . 11-13
+       10.4. Join Lobby (0x03)  . . . . . . . . . . . . . . . . . 13-14
+       10.5. Leave Lobby (0x04) . . . . . . . . . . . . . . . . . 14-15
+       10.6. Ready (0x05) . . . . . . . . . . . . . . . . . . . . .  16
+       10.7. Start Game (0x06)  . . . . . . . . . . . . . . . . . .  17
+       10.8. Game Loaded (0x07) . . . . . . . . . . . . . . . . . 18-19
+       10.9. Game Start (0x08)  . . . . . . . . . . . . . . . . . 19-20
+       10.10. Pause (0x09)  . . . . . . . . . . . . . . . . . . . 19-20
+       10.11. Win (0x0A)  . . . . . . . . . . . . . . . . . . . . 20-21
+       10.12. Lose (0x0B) . . . . . . . . . . . . . . . . . . . . 21-22
+       10.13. Dead (0x0C) . . . . . . . . . . . . . . . . . . . . .  22
+
+
+Ulysse Mercadal             Informational                      [Page 1]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+       10.14. Input (0x0D)  . . . . . . . . . . . . . . . . . . . 22-23
+       10.15. Move (0x0E) . . . . . . . . . . . . . . . . . . . . 23-24
+       10.16. Set Position (0x0F) . . . . . . . . . . . . . . . . 24-25
+       10.17. Get Coords (0x10) . . . . . . . . . . . . . . . . . 25-26
+       10.18. Player Info (0x11)  . . . . . . . . . . . . . . . . 26-28
+       10.19. Damage (0x12) . . . . . . . . . . . . . . . . . . . 28-29
+       10.20. Ability (0x13)  . . . . . . . . . . . . . . . . . . 29-30
+       10.21. Score (0x14)  . . . . . . . . . . . . . . . . . . . .  30
+       10.22. Message (0x15)  . . . . . . . . . . . . . . . . . . 30-31
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ulysse Mercadal             Informational                      [Page 2]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+1. Introduction to the R-Type Protocol
+
+   The R-Type Protocol is a lightweight, modular network protocol
+   designed to enable real-time multiplayer communication between a
+   game client (specifically the R-Type 3D client) and a dedicated
+   server.
+
+
+2. Goals
+
+   The protocol was built with the following key objectives:
+
+   - Modularity & Reusability: It is intentionally decoupled from
+     game logic, making it adaptable to virtually any real-time
+     multiplayer game - not just R-Type.
+
+   - Performance: To minimize latency, the protocol uses TCP only
+     for the initial connection handshake, then switches to UDP for
+     all gameplay data, ensuring fast and efficient transmission.
+
+   - Bandwidth Efficiency: Game data is packaged into compact binary
+     messages that may contain multiple commands (e.g., movement +
+     shooting + state change) in a single packet, reducing overall
+     network overhead.
+
+
+3. Communication Flow
+
+   1. Initial Connection (TCP)
+      The client establishes a TCP connection to the server to
+      perform a secure handshake: exchanging version info,
+      authentication tokens, and receiving a unique session ID.
+
+   2. Gameplay Communication (UDP)
+      After the session is validated, all real-time gameplay
+      updates - such as player input, entity states, and events -
+      are transmitted over UDP. This provides the low-latency
+      responsiveness required for fast-paced action games.
+
+   3. Multiplexed Packets
+      Each UDP packet can carry one or more commands. This batching
+      mechanism optimizes bandwidth usage and reduces packet count,
+      which is crucial for maintaining smooth synchronization under
+      varying network conditions.
+
+   It contains no hardcoded game logic, allowing seamless
+   integration into other game engines or genres (e.g., platformers,
+   shooters, real-time strategy) with minimal adaptation.
+
+
+Ulysse Mercadal             Informational                      [Page 3]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+4. Header and Body
+
+   The command are split in two main parts the header and the body.
+   The header contains information about the command, the sender,
+   and the body size. The body contains the additional information
+   (name, positions, status...)
+
+   This document serves as the foundation for the full R-Type
+   Protocol specification. Subsequent sections will detail packet
+   structures, supported command types, sequence numbering, and
+   strategies for handling packet loss in UDP streams.
+
+
+5. Protocol Commands
+
+   Each message in the R-Type Protocol is identified by an 8-bit
+   command ID. The same ID may be used for related actions (e.g.,
+   client request and server broadcast), and the exact meaning is
+   determined by the header. Below is the complete list of supported
+   commands.
+
+   Note:
+   - All commands respect the 512-byte packet limit. Large payloads
+     (e.g., long messages) must be split across multiple packets.
+   - The same command ID is used for both requests and
+     notifications/responses
+
+    int this command array, B collumv goes for broadcast
+   +------+------------------+----------+------------------------+---+
+   | ID   | Name             | Protocol | Description            | B |
+   +------+------------------+----------+------------------------+---+
+   | 0x00 | CONNECTION       | TCP      | Initiates connection   | N |
+   |      |                  |          | with the server.       |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x01 | DISCONNECTION    | TCP      | Signals disconnection  | N |
+   |      |                  |          | from the server. may   |   |
+   |      |                  |          | trigger a LEAVE_LOBBY  |   |
+   |      |                  |          | if player in game      |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x02 | GET_LOBBY        | TCP      | Request or give all    | N |
+   |      |                  |          | the existing lobby     |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x03 | JOIN_LOBBY       | TCP      | Request or signal a    | Y |
+   |      |                  |          | new player in the      |   |
+   |      |                  |          | lobby, The server      |   |
+   |      |                  |          | replies with the new   |   |
+   |      |                  |          | player list.           |   |
+   +------+------------------+----------+------------------------+---+
+
+
+Ulysse Mercadal             Informational                      [Page 4]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   | 0x04 | LEAVE_LOBBY      | TCP      | Request to leave the   | Y |
+   |      |                  |          | current lobby.         |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x05 | READY            | TCP      | Change a player's      | Y |
+   |      |                  |          | readiness state in     |   |
+   |      |                  |          | the lobby.             |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x06 | START_GAME       | TCP      | Ask or notify the      | Y |
+   |      |                  |          | match is begining.     |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x07 | GAME_LOADED      | TCP      | Sent once local assets | N |
+   |      |                  |          | are loaded. Server     |   |
+   |      |                  |          | waits before sending   |   |
+   |      |                  |          | GAME_START.            |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x08 | GAME_START       | TCP      | Final signal from the  | Y |
+   |      |                  |          | server that the game   |   |
+   |      |                  |          | loop is starting.      |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x09 | PAUSE            | TCP      | Update game pause      | Y |
+   |      |                  |          | state.                 |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x0A | WIN              | TCP      | Notifies victory       | Y |
+   +------+------------------+----------+------------------------+---+
+   | 0x0B | LOSE             | TCP      | Notifies defeat        | Y |
+   +------+------------------+----------+------------------------+---+
+   | 0x0C | DEAD             | TCP      | Notifies that a player | Y |
+   |      |                  |          | or entity has been     |   |
+   |      |                  |          | destroyed.             |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x0D | INPUT            | UDP      | Reports a player input | Y |
+   |      |                  |          | action, identified by  |   |
+   |      |                  |          | a key for more         |   |
+   |      |                  |          | modularity.            |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x0E | MOVE             | UDP      | Updates a player's     | Y |
+   |      |                  |          | position in 3D space   |   |
+   |      |                  |          | x, y, z.               |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x0F | SET_POSITION     | UDP      | Forces an absolute     | Y |
+   |      |                  |          | position update.       |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x10 | GET_COORDS       | UDP      | Requests current       | N |
+   |      |                  |          | coordinates of an      |   |
+   |      |                  |          | entity.                |   |
+   +------+------------------+----------+------------------------+---+
+
+
+
+
+Ulysse Mercadal             Informational                      [Page 5]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   | 0x11 | PLAYER_INFO      | UDP      | Requests or give       | * |
+   |      |                  |          | detailed player data   |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x12 | DAMAGE           | UDP      | Notifies that an       | Y |
+   |      |                  |          | entity has taken       |   |
+   |      |                  |          | damage.                |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x13 | ABILITY          | UDP      | notify that a entity   | Y |
+   |      |                  |          | use one of his         |   |
+   |      |                  |          | abilities.             |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x14 | SCORE            | UDP      | Updates a player's     | N |
+   |      |                  |          | score.                 |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x15 | MESSAGE          | UDP      | Sends a text message   | Y |
+   +------+------------------+----------+------------------------+---+
+
+   Note: B column indicates Broadcast (Y = yes, N = no, * = depends)
+
+
+6. Protocol Limitations
+
+   Param size:
+
+   - This ptococole can't have more than 255 versions id, because
+     it's a uint8
+
+   - A server can't host more than 255 players, because it's a uint8
+
+   - A server can't host more than 255 lobbys, because it's a uint8
+
+   - A lobby can't host more than 255 players, because it's a uint8
+
+   - You can't handle more than 255 input keys id, because it's a
+     uint8
+
+   - A player name must be a string with a length between 1, and 20
+     chars
+
+   - A lobby name must be a string with a length between 1, and 20
+     chars
+
+   - A level can't have more than 65534 npcs because it's a uint16
+
+   - A player can't take more than 65534 dammages because it's a
+     uint16
+
+
+
+
+Ulysse Mercadal             Informational                      [Page 6]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+7. Packet Structure
+
+   The R-Type Protocol uses a uniform binary packet format for all
+   communication, whether sent over TCP (e.g., during handshake or
+   reliable control messages) or UDP (for real-time gameplay
+   updates). This ensures consistency across transport layers while
+   allowing the protocol to remain transport-agnostic at the message
+   level.
+
+   7.1. General Rules
+
+   - Maximum size per packet: 512 bytes (including header and body).
+
+   - A single packet may contain one or more concatenated commands.
+
+   - If the total data exceeds 512 bytes, it must be split into
+     multiple packets.
+
+   - Each command is self-contained and consists of a 2-byte header
+     + an optional body (0 to 510 bytes).
+
+   - Command bodies are optional: some commands have an empty body
+     (body length = 0), while others carry structured game data.
+
+   Note: Even during the TCP handshake phase, messages follow this
+   exact format. The transport layer (TCP vs. UDP) affects delivery
+   guarantees and latency, not the message encoding.
+
+
+8. Command Format
+
+   Each command starts with a 2-byte (16-bit) header, followed by a
+   body whose length is declared in the header.
+
+   8.1. Header Layout (2 bytes)
+
+   +----------+---------------+------------------------------------+
+   | Bits     | Field         | Description                        |
+   +----------+---------------+------------------------------------+
+   | 15-14    | Direction     | 2-bit direction code (e.g., 00 =  |
+   |          |               | request, 01 = response - semantics |
+   |          |               | defined by context)                |
+   +----------+---------------+------------------------------------+
+   | 13-9     | Command ID    | 5-bit unsigned integer (0-31)      |
+   |          |               | identifying the command type       |
+   +----------+---------------+------------------------------------+
+   | 8-0      | Body Length   | 9-bit unsigned integer (0-511)     |
+   |          |               | indicating the size of the body    |
+
+
+Ulysse Mercadal             Informational                      [Page 7]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   |          |               | in bytes                           |
+   +----------+---------------+------------------------------------+
+
+   The body length does not include the 2-byte header... well
+   because a header is not a body :)
+
+   8.2. Visual bit layout:
+
+   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+   | 1| 2| 3| 4| 5| 6| 7| 8| 9|10|11|12|13|14|15|16|
+   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+   | D| D| I| I| I| I| I| L| L| L| L| L| L| L| L| L|
+   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+
+   Where:
+   - D = Direction (2 bits -> 4 possible values)
+   - I = Command ID (5 bits -> max 31)
+   - L = Body length (9 bits -> max 511)
+
+
+9. Usage Across Transports
+
+   +----------+-------------------------------+----------------------+
+   |Transport | Typical Use Case              | Packet Handling      |
+   +----------+-------------------------------+----------------------+
+   | TCP      | Handshake, authentication,    | Packets are sent as  |
+   |          | session setup, reliable       | a stream; the        |
+   |          | commands                      | receiver must frame  |
+   |          |                               | messages using the   |
+   |          |                               | known 2-byte header  |
+   |          |                               | + declared body      |
+   |          |                               | length to delimit    |
+   |          |                               | commands.            |
+   +----------+-------------------------------+----------------------+
+   | UDP      | Real-time gameplay (inputs,   | Each datagram        |
+   |          | state updates)                | contains one full    |
+   |          |                               | packet (<=512 bytes).|
+   |          |                               | Multiple commands    |
+   |          |                               | may be batched, but  |
+   |          |                               | the entire datagram  |
+   |          |                               | must fit in one UDP  |
+   |          |                               | payload.             |
+   +----------+-------------------------------+----------------------+
+
+   Because the same format is used on both transports,
+   serialization and parsing logic can be shared between TCP and UDP
+   code paths.
+
+
+
+Ulysse Mercadal             Informational                      [Page 8]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   9.1. Example
+
+   An EXAMPLE command (ID = 10) with a 4-byte body sent with
+   direction code 01:
+
+   - Direction = 01
+   - ID = 10 -> binary 01010
+   - Body length = 4 -> binary 000000100
+
+   Full 16-bit header (big-endian):
+   01 01010 000000100 -> grouped as two bytes:
+
+   - Byte 0: 01010100 = 0x54
+   - Byte 1: 00000100 = 0x04
+
+   Header sent: 0x54 0x04
+
+   Followed by 4 bytes of payload data.
+
+
+10. Command Specifications
+
+10.1. Connection (ID 0)
+
+   This command is used to initiate and accept a new client
+   connection to the server. It is the first message sent by a
+   client after opening a TCP socket. The server responds to
+   indicate whether the connection is accepted (e.g., due to version
+   compatibility or server capacity).
+
+   Warning! This command must be sent over TCP. It is part of the
+   initial handshake phase.
+
+   10.1.1. Client -> Server
+
+   Context:
+   The client attempts to connect to the server and declares the
+   protocol version it supports.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 00000     | 000000001        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes: 0x40 0x01
+   (Binary: 01 00000 000000001 - 01000000 00000001)
+
+
+Ulysse Mercadal             Informational                      [Page 9]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Body:
+   +--------------+--------+---------------------------+
+   | Size (bytes) | Type   | Content                   |
+   +--------------+--------+---------------------------+
+   | 1            | uint8  | Protocol version number   |
+   +--------------+--------+---------------------------+
+
+   10.1.2. Server -> Client
+
+   Context:
+   The server responds to the connection request, indicating
+   acceptance or rejection.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 00000     | 000000001        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes: 0x00 0x01
+   (Binary: 00 00000 000000001 - 00000000 00000001)
+
+   Body:
+   +--------------+--------+----------------------------------+
+   | Size (bytes) | Type   | Content                          |
+   +--------------+--------+----------------------------------+
+   | 1/8          | bool   | Connection status: 1 = accepted, |
+   |              |        | 0 = rejected                     |
+   +--------------+--------+----------------------------------+
+
+
+10.2. Disconnection (ID 1)
+
+   This command is used to terminate a session - either initiated by
+   the client (voluntary leave) or by the server (kick).
+
+   Warning! This command uses TCP exclusively.
+
+   If a player is in an active match, you may want to first send a
+   game-level leave notification (e.g., LEAVE_LOBBY) before issuing
+   this command.
+
+   10.2.1. Client -> Server
+
+   Context:
+   The client requests a graceful disconnection from the server.
+
+
+
+Ulysse Mercadal             Informational                      [Page 10]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 00001     | 000000000        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes (big-endian): 0x42 0x00
+   (Binary: 01 00001 000000000 - 01000010 00000000)
+
+   Body:
+   None.
+
+   10.2.2. Server -> Client
+
+   Context:
+   The server forcibly disconnects (kicks) the client, optionally
+   providing a reason.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 00001     | N                |
+   +---------------+-----------+------------------+
+
+   Where N is the length of the reason string (<=510 bytes to
+   respect the 512-byte packet limit).
+
+   Example (reason = ratio!!):
+   Body length = 8 - 000001000
+   Header bytes: 0x02 0x08
+   (Binary: 00 00001 000001000 - 00000010 00001000)
+
+   Body:
+   +--------------+----------+-----------------------+
+   | Size (bytes) | Type     | Content               |
+   +--------------+----------+-----------------------+
+   | N (0-510)    | string   | Reason message        |
+   +--------------+----------+-----------------------+
+
+   If the body length is 0, no reason is provided (silent kick).
+
+
+10.3. Get Lobby (ID 2)
+
+   This command is used to request the list of active lobbies from
+
+
+
+Ulysse Mercadal             Informational                     [Page 11]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   the server, or for the server to respond with that list. Each
+   lobby entry includes its name and current player count.
+
+   This command must be sent over TCP.
+
+   10.3.1. Client -> Server
+
+   Context:
+   The client requests the full list of available lobbies (e.g., for
+   a matchmaking menu).
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 00010     | 000000000        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes: 0x44 0x00
+   (Binary: 01 00010 000000000 - 01000100 00000000)
+
+   Body:
+   None.
+
+   10.3.2. Server -> Client
+
+   Context:
+   The server sends the current list of lobbies in response to a
+   GET_LOBBY request.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 00010     | N*(M + 3)        |
+   +---------------+-----------+------------------+
+
+   Where N is the total size of the lobby list.
+   Where M is the total size of the lobby name.
+
+   Body:
+   The body is a concatenated list of lobby entries. Each entry has
+   the following layout:
+
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Lobby ID                    |
+   | 1            | uint8    | Player count                |
+
+Ulysse Mercadal             Informational                     [Page 12]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   | M (1-20)     | string   | Lobby name                  |
+   +--------------+----------+-----------------------------+
+
+   - If no lobbies exist, the body is empty (N = 0).
+
+
+10.4. Join Lobby (ID 3)
+
+   This command allows a client to either join an existing game
+   lobby (by ID) or create a new lobby (by name). The server
+   responds with success or failure.
+
+   Warning! This command must be sent over TCP.
+
+   10.4.1. Client -> Server
+
+   Context:
+   The client requests to join or create a lobby.
+
+   Header (Join):
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 00011     | 000000001        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes: 0x46 0x01
+   (Binary: 01 00011 000000001 - 01000110 00000001)
+
+   Header (Create):
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 00011     | N                |
+   +---------------+-----------+------------------+
+
+   Where N = length of Lobby name (1-20 bytes).
+
+   Example (name = "R-Type Arena"):
+   Body length = 13 - 000001101
+   Header bytes: 0x46 0x0D
+   (Binary: 01 00011 000001101 - 01000110 00001101)
+
+      Body (Join):
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Lobby ID                    |
+
+
+Ulysse Mercadal             Informational                     [Page 13]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   | M            | string   | Player Name                 |
+   +--------------+----------+-----------------------------+
+
+   Where M = length of Player name (1-20 bytes).
+
+   Body (Create):
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | N (1-20)     | string   | Lobby name                  |
+   | M (1-20)     | string   | Player Name                 |
+   +--------------+----------+-----------------------------+
+
+   Where N = length of Lobby name (1-20 bytes).
+   Where M = length of Player name (1-20 bytes).
+
+   10.4.2. Server -> Client
+
+   Context:
+   The server responds to the join/create request.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 00011     | N                |
+   +---------------+-----------+------------------+
+
+   Where N = length of response body (0-510).
+
+   Example (success, no message):
+   Body length = 1 - 000000001
+   Header bytes: 0x06 0x01
+   (Binary: 00 00011 000000001 - 00000110 00000001)
+
+   Body:
+   +--------------+----------+----------------------------------+
+   | Size (bytes) | Type     | Content                          |
+   +--------------+----------+----------------------------------+
+   | 1/8          | bool     | Connection status: 1 = accepted, |
+   |              |          | 0 = rejected                     |
+   | N > 0        | string   | Additional message (e.g., "Lobby |
+   |              |          | full", "wrong name")             |
+   +--------------+----------+----------------------------------+
+
+10.5. Leave Lobby (ID 4)
+
+   This command allows a client to leave a lobby. The server
+
+
+Ulysse Mercadal             Informational                     [Page 14]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   responds with success or failure.
+
+   Warning! This command must be sent over TCP.
+
+   10.5.1. Client -> Server
+
+   Context:
+   The client requests to leave a lobby.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 00100     | 000000000        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes: 0x48 0x00
+   (Binary: 01 00100 000000000 - 01001000 00000000)
+
+   Body:
+   None.
+
+   10.5.2. Server -> Client
+
+   Context:
+   The server responds to the leave request.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 00100     | 000000001        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 1 - 000000001
+   Header bytes: 0x08 0x01
+   (Binary: 00 00100 000000001 - 00001000 00000001)
+
+
+   Body:
+   +--------------+----------+----------------------------------+
+   | Size (bytes) | Type     | Content                          |
+   +--------------+----------+----------------------------------+
+   | 1/8          | bool     | Leaving status: 1 = accepted,    |
+   |              |          | 0 = error                        |
+   +--------------+----------+----------------------------------+
+
+
+
+Ulysse Mercadal             Informational                     [Page 15]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+10.6. Ready (ID 5)
+
+   This command allows a client to set his status as ready or not
+   ready in a lobby. The server responds with success or failure.
+
+   Warning! This command must be sent over TCP.
+
+   10.6.1. Client -> Server
+
+   Context:
+   The client requests to change his ready status.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 00101     | 000000000        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes: 0x4A 0x00
+   (Binary: 01 00101 000000000 - 01001010 00000000)
+
+   Body:
+   None.
+
+   10.6.2. Server -> Client
+
+   Context:
+   The server responds to the ready request.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 00101     | 000000001        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 1 - 000000001
+   Header bytes: 0x0A 0x01
+   (Binary: 00 00101 000000001 - 00001010 00000001)
+
+   Body:
+   +--------------+----------+----------------------------------+
+   | Size (bytes) | Type     | Content                          |
+   +--------------+----------+----------------------------------+
+   | 1/8          | bool     | Ready status: 1 = accepted,      |
+   |              |          | 0 = error                        |
+   +--------------+----------+----------------------------------+
+
+Ulysse Mercadal             Informational                     [Page 16]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+10.7. Start Game (ID 6)
+
+   This command allows a client or the server to start the game
+   initialization procedure.
+
+   Warning! This command must be sent over TCP.
+
+   10.7.1. Client -> Server
+
+   Context:
+   The client (e.g., game leader) requests to start the game
+   loading procedure.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 00110     | 000000000        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes: 0x4C 0x00
+   (Binary: 01 00110 000000000 - 01001100 00000000)
+
+   Body:
+   None.
+
+   10.7.2. Server -> Client
+
+   Context:
+   The server responds to the start request.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 00110     | N                |
+   +---------------+-----------+------------------+
+
+   Where N = map configuration file content (0-510).
+
+   Note: Since the information on the game map can be very
+   extensive, the START_GAME command is particularly likely to be
+   split into several commands.
+
+   Example (a lot of map information):
+   Body length = 510 - 111111110
+   Header bytes: 0x0C 0xFE
+   (Binary: 00 00110 111111110 - 00001100 11111110)
+
+
+Ulysse Mercadal             Informational                     [Page 17]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | N            | string   | Map configuration file      |
+   |              |          | content                     |
+   +--------------+----------+-----------------------------+
+
+
+10.8. Game Loaded (ID 7)
+
+   This command notifies a client or the server that map loading is
+   done.
+
+   Warning! This command must be sent over TCP.
+
+   10.8.1. Client -> Server
+
+   Context:
+   The client notifies the server that his local assets loading is
+   done.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 00111     | 000000000        |
+   +---------------+-----------+------------------+
+
+
+Ulysse Mercadal             Informational                     [Page 18]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Raw header bytes: 0x4E 0x00
+   (Binary: 01 00111 000000000 - 01001110 00000000)
+
+   Body:
+   None.
+
+   10.8.2. Server -> Client
+
+   Context:
+   The server notifies the client that the game is starting. This
+   command is sent after the server has received "loading done"
+   confirmations from all ready clients.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 00111     | 000000000        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 0 - 000000000
+   Header bytes: 0x0E 0x00
+   (Binary: 00 00111 000000000 - 00001110 00000000)
+
+   Body:
+   None.
+
+
+10.9. Game Start (ID 8)
+
+   This command is sent by the server to officially start the game
+   loop after all players have finished loading.
+
+   Warning! This command must be sent over TCP.
+   Note: This command can only be sent by the server.
+
+   10.9.1. Server -> Client
+
+   Context:
+   The server notifies all connected clients that the match is now
+   starting. This message marks the transition from lobby/loading
+   phase to active gameplay.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 01000     | 000000000        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 0 - 000000000
+   Raw header bytes: 0x10 0x00
+   (Binary: 00 01000 000000000 - 00010000 00000000)
+
+   Body:
+   None.
+
+
+10.10. Pause (ID 9)
+
+   This command is used to update the game pause state.
+
+   Warning! This command must be sent over TCP.
+
+   10.10.1. Client -> Server
+
+
+
+Ulysse Mercadal             Informational                     [Page 19]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Context:
+   The client requests to pause or unpause the game.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 01001     | 000000001        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes: 0x52 0x01
+   (Binary: 01 01001 000000001 - 01010010 00000001)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1/8          | bool     | Pause state: 1 = paused,    |
+   |              |          | 0 = unpaused                |
+   +--------------+----------+-----------------------------+
+
+   10.10.2. Server -> Client
+
+   Context:
+   The server broadcasts the new pause state to all clients.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 01001     | 000000001        |
+   +---------------+-----------+------------------+
+
+   Raw header bytes: 0x12 0x01
+   (Binary: 00 01001 000000001 - 00010010 00000001)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1/8          | bool     | Pause state: 1 = paused,    |
+   |              |          | 0 = unpaused                |
+   +--------------+----------+-----------------------------+
+
+
+10.11. Win (ID 10)
+
+   This command notifies that a player or team has won the game.
+
+
+Ulysse Mercadal             Informational                     [Page 20]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+Warning! This command must be sent over TCP.
+   Note: This command can only be sent by the server.
+
+   10.11.1. Server -> Client
+
+   Context:
+   The server notifies the client of a victory condition being met.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 01010     | N                |
+   +---------------+-----------+------------------+
+
+   Where N = Winner name (1-20 bytes).
+
+   Example (name = "Michel"):
+   Body length = 7 - 000000111
+   Raw header bytes: 0x14 0x07
+   (Binary: 00 01010 000000111 - 00010100 00000111)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | N            | string   | Win player name             |
+   +--------------+----------+-----------------------------+
+
+
+10.12. Lose (ID 11)
+
+   This command is sent by the server to notify a client that they
+   have lost the game. It marks the end of the match for the player.
+
+   Warning! This command must be sent over TCP.
+   Note: This command can only be sent by the server.
+
+   10.12.1. Server -> Client
+
+   Context:
+   The server notifies the client that a defeat condition has been
+   met.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 01011     | N                |
+   +---------------+-----------+------------------+
+
+Ulysse Mercadal             Informational                     [Page 21]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Where N = Loser name (1-20 bytes), or 0 if no one lost.
+
+   Example (name = "Michel"):
+   Body length = 7 - 000000111
+   Raw header bytes: 0x16 0x07
+   (Binary: 00 01011 000000111 - 00010110 00000111)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | N            | string   | Loser player name           |
+   +--------------+----------+-----------------------------+
+
+
+10.13. Dead (ID 12)
+
+   This command is sent by the server to notify clients that a
+   player has died.
+
+   Warning! This command must be sent over TCP.
+   Note: This command can only be sent by the server.
+
+   10.13.1. Server -> Client
+
+   Context:
+   The server notifies clients that a player entity has been
+   destroyed (e.g., hit by enemy, out of bounds).
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 01100     | N                |
+   +---------------+-----------+------------------+
+
+   Where N = Dead player name (1-20 bytes).
+
+   Example (name = "Michel"):
+   Body length = 7 - 000000111
+   Raw header bytes: 0x18 0x07
+   (Binary: 00 01100 000000111 - 00011000 00000111)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | N            | string   | Dead player name            |
+   +--------------+----------+-----------------------------+
+
+Ulysse Mercadal             Informational                     [Page 22]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+10.14. Input (ID 13)
+
+   This command is used to send a player input (press/release) and
+   receive immediate feedback from the server on whether the action
+   was applied, denied, or requires follow-up.
+
+   Warning! This command must be sent over UDP.
+
+   10.14.1. Client -> Server
+
+   Context:
+   The client sends a real-time input event.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 01101     | 000000010        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 2 - 000000010
+   Raw header bytes: 0x5A 0x02
+   (Binary: 01 01101 000000010 - 01011010 00000010)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Key ID                      |
+   | 1/8          | bool     | Action (1=press, 0=release) |
+   +--------------+----------+-----------------------------+
+
+   10.14.2. Server -> Client
+
+   Context:
+   The server responds with execution status:
+   - FAILED: unauthorized input
+   - SUCCESS: action processed
+   - LATER: action success, but handled in a future command (e.g.,
+     will send MOVE later)
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 01101     | 000000010        |
+   +---------------+-----------+------------------+
+
+
+Ulysse Mercadal             Informational                     [Page 23]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Example (key_id = 5, press, status = LATER):
+   Body length = 2 - 000000010
+   Raw header bytes: 0x1A 0x02
+   (Binary: 00 01101 000000010 - 00011010 00000010)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Key ID (echoed)             |
+   | 1/8          | bool     | Action (echoed)             |
+   | 2/8          | enum     | Status (00=FAILED,          |
+   |              |          | 01=SUCCESS, 10=LATER)       |
+   +--------------+----------+-----------------------------+
+
+
+10.15. Move (ID 14)
+
+   This command is sent by the server to notify a client of a
+   player's updated position in 3D space. Positions are encoded as
+   16-bit signed integers scaled by 0.01 for bandwidth efficiency.
+
+   Warning! This command must be sent over UDP.
+   Note: This command can only be sent by the server.
+
+   10.15.1. Server -> Client
+
+   Context:
+   The server broadcasts the new coordinates of a player entity
+   after simulating movement. World positions are converted to
+   scaled integers before transmission.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 01110     | 000000111        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 7 - 000000111
+   Raw header bytes: 0x1C 0x07
+   (Binary: 00 01110 000000111 - 00011100 00000111)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Player ID                   |
+
+
+Ulysse Mercadal             Informational                     [Page 24]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   | 2            | int16    | X position (world = value * |
+   |              |          | 0.01)                       |
+   | 2            | int16    | Y position (world = value * |
+   |              |          | 0.01)                       |
+   | 2            | int16    | Z position (world = value * |
+   |              |          | 0.01)                       |
+   +--------------+----------+-----------------------------+
+
+
+10.16. Set Position (ID 15)
+
+   This command is sent by the server to force an absolute position
+   update for a player. World positions are converted to scaled
+   integers before transmission.
+
+   Warning! This command must be sent over UDP.
+   Note: This command can only be sent by the server.
+
+   10.16.1. Server -> Client
+
+   Context:
+   The server sets a player's position to an exact location in the
+   world, bypassing everything.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 01111     | 000000111        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 7 - 000000111
+   Raw header bytes: 0x1E 0x07
+   (Binary: 00 01111 000000111 - 00011110 00000111)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Player ID                   |
+   | 2            | int16    | X position (world = value * |
+   |              |          | 0.01)                       |
+   | 2            | int16    | Y position (world = value * |
+   |              |          | 0.01)                       |
+   | 2            | int16    | Z position (world = value * |
+   |              |          | 0.01)                       |
+   +--------------+----------+-----------------------------+
+
+Ulysse Mercadal             Informational                     [Page 25]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+10.17. Get Coords (ID 16)
+
+   This command is sent by the client to request the current
+   position of an entity. The server responds with its positions.
+   World positions are converted to scaled integers before
+   transmission.
+
+   Warning! This command must be sent over UDP.
+
+   10.17.1. Client -> Server
+
+   Context:
+   The client requests up-to-date coordinates of an entity.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 10000     | 000000001        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 1 - 000000001
+   Raw header bytes: 0x60 0x01
+   (Binary: 01 10000 000000001 - 01100000 00000001)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Entity ID                   |
+   +--------------+----------+-----------------------------+
+
+   10.17.2. Server -> Client
+
+   Context:
+   The server sends the coordinates of the asked entity.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 10000     | 000000111        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 7 - 000000111
+   Raw header bytes: 0x20 0x07
+   (Binary: 00 10000 000000111 - 00100000 00000111)
+
+Ulysse Mercadal             Informational                     [Page 26]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Entity ID (echoed)          |
+   | 2            | int16    | X position (world = value * |
+   |              |          | 0.01)                       |
+   | 2            | int16    | Y position (world = value * |
+   |              |          | 0.01)                       |
+   | 2            | int16    | Z position (world = value * |
+   |              |          | 0.01)                       |
+   +--------------+----------+-----------------------------+
+
+
+10.18. Player Info (ID 17)
+
+   This command is used by the client to request information about
+   another player. The server responds with the player's name,
+   position, and score.
+
+   Warning! This command must be sent over UDP.
+
+   10.18.1. Client -> Server
+
+   Context:
+   The client requests detailed information about another player.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 10001     | 000000001        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 1 - 000000001
+   Raw header bytes: 0x62 0x01
+   (Binary: 01 10001 000000001 - 01100010 00000001)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Player ID                   |
+   +--------------+----------+-----------------------------+
+
+   10.18.2. Server -> Client
+
+
+
+Ulysse Mercadal             Informational                     [Page 27]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Context:
+   The server sends detailed information about the requested player.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 10001     | 11+N             |
+   +---------------+-----------+------------------+
+
+   Where N = player name length (1-20 bytes).
+
+   Example (name = "Michel", N=6):
+   Body length = 11 + 6 = 17 - 000010001
+   Raw header bytes: 0x22 0x11
+   (Binary: 00 10001 000010001 - 00100010 00010001)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Player ID                   |
+   | N            | string   | Player name                 |
+   | 2            | int16    | X position (world = value * |
+   |              |          | 0.01)                       |
+   | 2            | int16    | Y position (world = value * |
+   |              |          | 0.01)                       |
+   | 2            | int16    | Z position (world = value * |
+   |              |          | 0.01)                       |
+   | 4            | uint32   | Score                       |
+   +--------------+----------+-----------------------------+
+
+
+10.19. Damage (ID 18)
+
+   This command is sent by the server to notify clients that an
+   entity has taken damage.
+
+   Warning! This command must be sent over UDP.
+   Note: This command can only be sent by the server.
+
+   10.19.1. Server -> Client
+
+   Context:
+   The server broadcasts a damage event (e.g., player hit by enemy
+   fire).
+
+   Header:
+
+
+Ulysse Mercadal             Informational                     [Page 28]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 10010     | 000000111        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 7 - 000000111
+   Raw header bytes: 0x24 0x07
+   (Binary: 00 10010 000000111 - 00100100 00000111)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 2            | uint16   | Victim ID                   |
+   | 1/8          | bool     | Victim type (1=player,      |
+   |              |          | 0=NPC)                      |
+   | 2            | uint16   | Source ID                   |
+   | 1/8          | bool     | Source type (1=player,      |
+   |              |          | 0=NPC)                      |
+   | 2            | uint16   | Damage amount               |
+   +--------------+----------+-----------------------------+
+
+
+10.20. Ability (ID 19)
+
+   This command is sent by the server to notify clients that an
+   entity has used an ability.
+
+   Warning! This command must be sent over UDP.
+   Note: This command can only be sent by the server.
+
+   10.20.1. Server -> Client
+
+   Context:
+   The server broadcasts an ability usage event.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 10011     | 000000101        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 5 - 000000101
+   Raw header bytes: 0x26 0x05
+   (Binary: 00 10011 000000101 - 00100110 00000101)
+
+
+Ulysse Mercadal             Informational                     [Page 29]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 2            | uint16   | Entity ID                   |
+   | 1/8          | bool     | Entity type (1=player,      |
+   |              |          | 0=NPC)                      |
+   | 2            | uint16   | Ability ID                  |
+   +--------------+----------+-----------------------------+
+
+
+10.21. Score (ID 20)
+
+   This command is sent by the server to notify clients of a
+   player's updated score.
+
+   Warning! This command must be sent over UDP.
+   Note: This command can only be sent by the server.
+
+   10.21.1. Server -> Client
+
+   Context:
+   The server broadcasts a score update.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 10100     | 000000110        |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 6 - 000000110
+   Raw header bytes: 0x28 0x06
+   (Binary: 00 10100 000000110 - 00101000 00000110)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 2            | uint16   | Entity ID                   |
+   | 4            | uint32   | Score                       |
+   +--------------+----------+-----------------------------+
+
+
+
+
+
+
+
+Ulysse Mercadal             Informational                     [Page 30]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+10.22. Message (ID 21)
+
+   This command is used to send and broadcast text messages. The
+   client sends a message to the server, and the server rebroadcasts
+   it to all clients.
+
+   Warning! This command must be sent over UDP.
+
+   10.22.1. Client -> Server
+
+   Context:
+   The client sends a chat message or request to the server.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 10101     | N                |
+   +---------------+-----------+------------------+
+
+   Where N = message length (1-127 bytes).
+
+   Example (message = "Hello", N=5):
+   Body length = 5 - 000000101
+   Raw header bytes: 0x6A 0x05
+   (Binary: 01 10101 000000101 - 01101010 00000101)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | N            | string   | Message text                |
+   +--------------+----------+-----------------------------+
+
+   10.22.2. Server -> Client
+
+   Context:
+   The server broadcasts a message received from a client or
+   generated internally.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 10101     | 3+N              |
+   +---------------+-----------+------------------+
+
+   Where N = message length (1-127 bytes).
+
+
+Ulysse Mercadal             Informational                     [Page 31]
+
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
+
+
+   Example (player 42 says "EZ u noob", N=9):
+   Body length = 3 + 9 = 12 - 000001100
+   Raw header bytes: 0x2A 0x0C
+   (Binary: 00 10101 000001100 - 00101010 00001100)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 2            | uint16   | Entity ID (0=system)        |
+   | 1/8          | bool     | Entity type (1=player,      |
+   |              |          | 0=NPC/system)               |
+   | N            | string   | Message text                |
+   +--------------+----------+-----------------------------+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ulysse Mercadal             Informational                     [Page 32]
+```
