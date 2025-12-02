@@ -7,6 +7,8 @@ The engine supports **skeletal animation** for FBX models. Animations are manage
 
 > Only **FBX models** with embedded animation clips are supported. OBJ/MTL files do not support animation.
 
+These method are parts of the **`AnimationController`**, accessible via `Renderer3D::getShaderController()`.
+
 ---
 
 ## Core Methods
@@ -16,8 +18,8 @@ The engine supports **skeletal animation** for FBX models. Animations are manage
 Starts or switches to a named animation for a specific object instance.
 
 ```cpp
-int robotId = renderer.addObject("assets/indien-qui-danse.fbx");
-renderer.playAnimation(robotId, "Walk", true);
+int robotId = renderer.getAssetController().addObject("assets/indien-qui-danse.fbx");
+renderer.getShaderController().playAnimation(robotId, "Walk", true);
 ```
 
 - `objectId`: The instance ID returned by `addObject()` (must correspond to an FBX model).
@@ -34,7 +36,7 @@ renderer.playAnimation(robotId, "Walk", true);
 Enables or disables looping for the currently playing animation.
 
 ```cpp
-renderer.toggleAnimationLooping(robotId, false); // play once
+renderer.getShaderController().toggleAnimationLooping(robotId, false); // play once
 ```
 
 - Has no effect if no animation is playing on the object.
@@ -46,7 +48,7 @@ renderer.toggleAnimationLooping(robotId, false); // play once
 Returns whether the current animation is set to loop.
 
 ```cpp
-if (renderer.isAnimationLoopingEnabled(robotId)) {
+if (renderer.getShaderController().isAnimationLoopingEnabled(robotId)) {
     // ...
 }
 ```
@@ -58,7 +60,7 @@ if (renderer.isAnimationLoopingEnabled(robotId)) {
 Returns a list of all available animation names for the model used by this instance.
 
 ```cpp
-std::vector<std::string> anims = renderer.getAnimationNames(robotId);
+std::vector<std::string> anims = renderer.getShaderController().getAnimationNames(robotId);
 for (const auto& name : anims) {
     std::cout << "Available animation: " << name << "std::endl";
 }
@@ -88,7 +90,7 @@ for (const auto& name : anims) {
 ### Debug Tip
 To verify animations are loaded:
 ```cpp
-auto names = renderer.getAnimationNames(id);
+auto names = renderer.getShaderController().getAnimationNames(id);
 assert(!names.empty()); // should list "Idle", "Walk", etc.
 ```
 
@@ -97,17 +99,17 @@ assert(!names.empty()); // should list "Idle", "Walk", etc.
 ## Example: Animation Controller
 
 ```cpp
-int characterId = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
+int characterId = renderer.getAssetController().addObject("assets/indien-qui-danse.fbx", {0,0,0});
 
 // Play idle by default
-renderer.playAnimation(characterId, "Idle", true);
+renderer.getShaderController().playAnimation(characterId, "Idle", true);
 
 // Switch based on input
 if (isWalking) {
-    renderer.playAnimation(characterId, "Walk", true);
+    renderer.getShaderController().playAnimation(characterId, "Walk", true);
 } else if (isAttacking) {
-    renderer.playAnimation(characterId, "Attack", false); // play once
-    if (!renderer.isAnimationLoopingEnabled(characterId)) {
+    renderer.getShaderController().playAnimation(characterId, "Attack", false); // play once
+    if (!renderer.getShaderController().isAnimationLoopingEnabled(characterId)) {
         // Optional: check if animation finished (not yet exposed)
     }
 }
@@ -127,8 +129,8 @@ The engine supports **skeletal animation** for FBX models. Animations are manage
 Starts or switches to a named animation for a specific object instance.
 
 ```cpp
-int robotId = renderer.addObject("assets/indien-qui-danse.fbx");
-renderer.playAnimation(robotId, "Walk", true);
+int robotId = renderer.getAssetController().addObject("assets/indien-qui-danse.fbx");
+renderer.getShaderController().playAnimation(robotId, "Walk", true);
 ```
 
 - `objectId`: The instance ID returned by `addObject()` (must correspond to an FBX model).
@@ -145,7 +147,7 @@ renderer.playAnimation(robotId, "Walk", true);
 Enables or disables looping for the currently playing animation.
 
 ```cpp
-renderer.toggleAnimationLooping(robotId, false); // play once
+renderer.getShaderController().toggleAnimationLooping(robotId, false); // play once
 ```
 
 - Has no effect if no animation is playing on the object.
@@ -157,7 +159,7 @@ renderer.toggleAnimationLooping(robotId, false); // play once
 Returns whether the current animation is set to loop.
 
 ```cpp
-if (renderer.isAnimationLoopingEnabled(robotId)) {
+if (renderer.getShaderController().isAnimationLoopingEnabled(robotId)) {
     // ...
 }
 ```
@@ -201,17 +203,17 @@ for (const auto& name : anims) {
 ## Example: Animation Controller
 
 ```cpp
-int characterId = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
+int characterId = renderer.getAssetController().addObject("assets/indien-qui-danse.fbx", {0,0,0});
 
 // Play idle by default
-renderer.playAnimation(characterId, "Idle", true);
+renderer.getShaderController().playAnimation(characterId, "Idle", true);
 
 // Switch based on input
 if (isWalking) {
-    renderer.playAnimation(characterId, "Walk", true);
+    renderer.getShaderController().playAnimation(characterId, "Walk", true);
 } else if (isAttacking) {
-    renderer.playAnimation(characterId, "Attack", false); // play once
-    if (!renderer.isAnimationLoopingEnabled(characterId)) {
+    renderer.getShaderController().playAnimation(characterId, "Attack", false); // play once
+    if (!renderer.getShaderController().isAnimationLoopingEnabled(characterId)) {
         // Optional: check if animation finished (not yet exposed)
     }
 }

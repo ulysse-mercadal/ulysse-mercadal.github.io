@@ -7,6 +7,8 @@ The engine supports two rendering modes:
 1. **Single-pass rendering** (using one active shader),
 2. **Multi-pass post-processing pipeline** (chaining multiple shaders).
 
+These method are parts of the **`ShaderController`**, accessible via `Renderer3D::getShaderController()`.
+
 ---
 
 ## Single Shader Mode (Default)
@@ -16,7 +18,7 @@ The engine supports two rendering modes:
 Sets the active shader for single-pass rendering.
 
 ```cpp
-renderer.setCurrentShader("phong");
+renderer.getShaderController().setCurrentShader("phong");
 ```
 
 - Built-in shaders: `"simple"`, `"phong"`, `"pixelize"`.
@@ -30,7 +32,7 @@ renderer.setCurrentShader("phong");
 Returns the currently active shader (used in single-pass mode).
 
 ```cpp
-auto current = renderer.getCurrentShader();
+auto current = renderer.getShaderController().getCurrentShader();
 if (current) {
     // e.g., modify uniforms manually
 }
@@ -45,7 +47,7 @@ Returns `nullptr` if no shader is active.
 Retrieves a loaded shader by name (without activating it).
 
 ```cpp
-auto pixelShader = renderer.getShader("pixelize");
+auto pixelShader = renderer.getShaderController().getShader("pixelize");
 if () {
     // Add to pipeline later
 }
@@ -66,8 +68,8 @@ A **shader pipeline** is a sequence of shaders applied in order:
 Appends a shader to the end of the current pipeline.
 
 ```cpp
-auto pixelShader = renderer.getShader("pixelize");
-renderer.addShaderToPipeline(pixelShader);
+auto pixelShader = renderer.getShaderController().getShader("pixelize");
+renderer.getShaderController().addShaderToPipeline(pixelShader);
 ```
 
 > The first shader in the pipeline **must be a geometry shader** (e.g., `"phong"`). Post-processing shaders (e.g., `"pixelize"`) should come after.
@@ -80,10 +82,10 @@ Replaces the entire pipeline at once.
 
 ```cpp
 std::vector<std::shared_ptr<IShader>> pipeline = {
-    renderer.getShader("phong"),
-    renderer.getShader("pixelize")
+    renderer.getShaderController().getShader("phong"),
+    renderer.getShaderController().getShader("pixelize")
 };
-renderer.setShaderPipeline(pipeline);
+renderer.getShaderController().setShaderPipeline(pipeline);
 ```
 
 - Clears any existing pipeline.
@@ -96,7 +98,7 @@ renderer.setShaderPipeline(pipeline);
 Returns a reference to the current pipeline.
 
 ```cpp
-const auto& pipeline = renderer.getShaderPipeline();
+const auto& pipeline = renderer.getShaderController().getShaderPipeline();
 std::cout << "Pipeline length: " << pipeline.size() << "std::endl";
 ```
 
@@ -109,7 +111,7 @@ Useful for inspection or conditional logic.
 Removes **all occurrences** of a shader (by name) from the pipeline.
 
 ```cpp
-renderer.removeShaderFromPipeline("pixelize"); // disables pixelation
+renderer.getShaderController().removeShaderFromPipeline("pixelize"); // disables pixelation
 ```
 
 Does nothing if the shader is not in the pipeline.
@@ -143,9 +145,9 @@ After this, rendering uses `getCurrentShader()`.
 
 ```cpp
 // Use Phong for lighting + Pixelize as post-process
-renderer.setShaderPipeline({
-    renderer.getShader("phong"),
-    renderer.getShader("pixelize")
+renderer.getShaderController().setShaderPipeline({
+    renderer.getShaderController().getShader("phong"),
+    renderer.getShaderController().getShader("pixelize")
 });
 ```
 
@@ -156,11 +158,11 @@ bool postEnabled = true;
 
 if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
     if (postEnabled) {
-        renderer.clearShaderPipeline();
+        renderer.getShaderController().clearShaderPipeline();
     } else {
-        renderer.setShaderPipeline({
-            renderer.getShader("phong"),
-            renderer.getShader("pixelize")
+        renderer.getShaderController().setShaderPipeline({
+            renderer.getShaderController().getShader("phong"),
+            renderer.getShaderController().getShader("pixelize")
         });
     }
     postEnabled = !postEnabled;
@@ -168,4 +170,5 @@ if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) {
 ```
 
 > The `"simple"` shader is unlit and ignores materials — useful for debugging.
+> The `"phong"` shader simulate a simple phong effect and adapt geometry to the animation, it should be your first shader in a final pipline.
 > The `"pixelize"` shader expects a `screenTexture` uniform (automatically bound by the engine).

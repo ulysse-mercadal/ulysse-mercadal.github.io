@@ -4,16 +4,7 @@ description: Transform an object on the viewport
 ---
 
 After creating an object with `addObject()`, you can dynamically update its position, rotation, or scale using the following public methods.
-
----
-
-## Object Identification
-
-Because object IDs are **local to each model**, you must always specify:
-- `modelPath`: the exact path used in `addObject()` (e.g., `"assets/indien-qui-danse.fbx"`),
-- `instanceId`: the integer returned by `addObject()`.
-
-> The pair `(modelPath, instanceId)` uniquely identifies an instance.
+These method are parts of the **`TransformController`**, accessible via `Renderer3D::getTransformController()`.
 
 ---
 
@@ -24,7 +15,7 @@ Because object IDs are **local to each model**, you must always specify:
 Sets the world-space position of an instance.
 
 ```cpp
-bool Renderer3D::setObjectPosition(
+bool TransformController::setObjectPosition(
     const std::string& modelPath,
     int instanceId,
     const glm::vec3& position
@@ -33,8 +24,8 @@ bool Renderer3D::setObjectPosition(
 
 **Example**:
 ```cpp
-int id = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
-renderer.setObjectPosition("assets/indien-qui-danse.fbx", id, {5.0f, 1.0f, -3.0f});
+int id = renderer.getAssetController().addObject("assets/indien-qui-danse.fbx", {0,0,0});
+renderer.getTransformController().setObjectPosition("assets/indien-qui-danse.fbx", id, {5.0f, 1.0f, -3.0f});
 ```
 
 ---
@@ -44,7 +35,7 @@ renderer.setObjectPosition("assets/indien-qui-danse.fbx", id, {5.0f, 1.0f, -3.0f
 Sets absolute Euler rotation in **radians** (YXZ convention).
 
 ```cpp
-bool Renderer3D::setObjectRotation(
+bool TransformController::setObjectRotation(
     const std::string& modelPath,
     int instanceId,
     const glm::vec3& rotation
@@ -53,8 +44,8 @@ bool Renderer3D::setObjectRotation(
 
 **Example**:
 ```cpp
-int id = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
-renderer.setObjectRotation("assets/indien-qui-danse.fbx", id, {0.0f, glm::radians(90.0f), 0.0f});
+int id = renderer.getAssetController().addObject("assets/indien-qui-danse.fbx", {0,0,0});
+renderer.getTransformController().setObjectRotation("assets/indien-qui-danse.fbx", id, {0.0f, glm::radians(90.0f), 0.0f});
 ```
 
 ---
@@ -64,7 +55,7 @@ renderer.setObjectRotation("assets/indien-qui-danse.fbx", id, {0.0f, glm::radian
 Sets local scale per axis (or uniform if using `glm::vec3(s)`).
 
 ```cpp
-bool Renderer3D::setObjectScale(
+bool TransformController::setObjectScale(
     const std::string& modelPath,
     int instanceId,
     const glm::vec3& scale
@@ -73,9 +64,9 @@ bool Renderer3D::setObjectScale(
 
 **Example**:
 ```cpp
-int id = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
-renderer.setObjectScale("assets/indien-qui-danse.fbx", id, glm::vec3(2.0f)); // uniform
-renderer.setObjectScale("assets/indien-qui-danse.fbx", id, {1.0f, 2.0f, 0.5f}); // non-uniform
+int id = renderer.getAssetController().addObject("assets/indien-qui-danse.fbx", {0,0,0});
+renderer.getTransformController().setObjectScale("assets/indien-qui-danse.fbx", id, {2.0f, 2.0f, 2.0f}); // uniform
+renderer.getTransformController().setObjectScale("assets/indien-qui-danse.fbx", id, {1.0f, 2.0f, 0.5f}); // non-uniform
 ```
 
 ---
@@ -85,7 +76,7 @@ renderer.setObjectScale("assets/indien-qui-danse.fbx", id, {1.0f, 2.0f, 0.5f}); 
 Updates position, rotation, and scale in one call (more efficient).
 
 ```cpp
-bool Renderer3D::setObjectTransform(
+bool TransformController::setObjectTransform(
     const std::string& modelPath,
     int instanceId,
     const glm::vec3& position,
@@ -103,15 +94,14 @@ All methods return:
 ## Behavior Notes
 
 - The new transform is applied **starting from the next frame** (used in `cullAndSortObjects`).
-- Works **only on non-animated objects** (e.g., `.obj`). For skinned FBX models, vertex positions are driven by bone, these transforms are **ignored during animation**.
 
 ## Usage in Game Loop
 
 ```cpp
 // In initialization
-int playerModelId = renderer.addObject("assets/indien-qui-danse.fbx", {0,0,0});
+int playerModelId = renderer.getAssetController().addObject("assets/indien-qui-danse.fbx", {0,0,0});
 
 // In update loop
 glm::vec3 newPos = playerPosition + movementInput;
-renderer.setObjectPosition("assets/indien-qui-danse.fbx", playerModelId, newPos);
+renderer.getTransformController().setObjectPosition("assets/indien-qui-danse.fbx", playerModelId, newPos);
 ```
