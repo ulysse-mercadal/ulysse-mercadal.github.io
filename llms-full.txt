@@ -967,8 +967,393 @@ if (isWalking) {
 ```
 
 
-# work in progress here
+# Game engine overview
 
+
+
+# ECS Architecture Overview
+
+The **Entity Component System (ECS)** is a software architectural pattern mostly used in video game development for the representation of game world objects. An ECS comprises entities composed of components of data, with systems which operate on entities' components.
+
+## Core Concepts
+
+### 1. Entity
+
+An **Entity** is a general purpose object. Ideally, it consists only of a unique identifier. They "exist" by the virtue of being managed by the `Registry` and having components attached to them.
+
+### 2. Component
+
+A **Component** is the raw data for one aspect of the object, and how it interacts with the world. For example, a `Position` component might just hold `x` and `y` coordinates.
+
+### 3. System
+
+A **System** performs global actions on every Entity that possesses a component of the same aspect as that System. For example, a `Movement` system might iterate over all entities that have a `Position` and `Velocity` component, and update the position based on the velocity.
+
+### 4. Registry
+
+The **Registry** is the central hub of the ECS. It manages:
+
+* **Entities**: Creation and destruction.
+* **Components**: Storage (via `SparseArray`), addition, and removal.
+* **Events**: A communication bus for decoupled interaction.
+
+## Diagram
+
+<Mermaid
+  chart="graph TD
+    Reg[Registry] --> EM[EntityManager]
+    Reg --> EvM[EventManager]
+    Reg --> Components[Component Arrays]
+    
+    EM --> Entity[Entity IDs]
+    
+    Components --> SA1[SparseArray<Position>]
+    Components --> SA2[SparseArray<Velocity>]
+    
+    System[System] --> Reg
+    System --> View[View]
+    View --> SA1
+    View --> SA2"
+/>
+
+## Quick Start
+
+```cpp
+#include "Registry.hpp"
+#include "SystemManager.hpp"
+
+// 1. Define Components
+struct Position { float x, y; };
+struct Velocity { float vx, vy; };
+
+// 2. Define System
+class MovementSystem : public ISystem {
+public:
+    void update(Registry& r, float dt) override {
+        // ... logic
+    }
+};
+
+int main() {
+    Registry registry;
+    SystemManager sysManager;
+
+    // 3. Register Components
+    registry.registerComponent<Position>();
+    registry.registerComponent<Velocity>();
+
+    // 4. Register System
+    sysManager.registerSystem<MovementSystem>(registry);
+
+    // 5. Create Entity
+    auto entity = registry.spawnEntity();
+    registry.addComponent<Position>(entity, 0.0f, 0.0f);
+    registry.addComponent<Velocity>(entity, 1.0f, 0.0f);
+
+    // 6. Game Loop
+    while (true) {
+        sysManager.update(registry, 0.016f);
+    }
+}
+```
+
+
+# Game engine overview
+
+
+
+# Entities
+
+Entities are the primary objects in the ECS world. An entity is essentially just an ID (unique identifier).
+
+## The `Entity` Class
+
+The `Entity` class is a lightweight wrapper around a `size_t` ID and a generation count (used to recycle IDs safely).
+
+```cpp
+class Entity {
+public:
+    std::size_t id() const;
+    std::size_t generation() const;
+    // ...
+};
+```
+
+## Managing Entities
+
+All entity management is done through the `Registry`.
+
+### Spawning an Entity
+
+To create a new entity, use `spawnEntity()`. This returns an `Entity` object.
+
+```cpp
+Registry registry;
+Entity myEntity = registry.spawnEntity();
+```
+
+### Killing an Entity
+
+To destroy an entity, use `killEntity(entity)`. This will also automatically remove all components associated with this entity.
+
+```cpp
+registry.killEntity(myEntity);
+```
+
+### Lifecycle
+
+1. **Creation**: When `spawnEntity()` is called, the `EntityManager` finds a free ID. If recycled IDs are available, it reuses one (incrementing its generation). Otherwise, it creates a new ID.
+2. **Destruction**: When `killEntity()` is called, the `Registry` invokes registered "erasers" to remove components from all sparse arrays for that entity ID. The ID is then returned to the pool of free IDs.
+
+
+# Game engine overview
+
+
+
+# Components
+
+Components hold the state of an entity. They do not contain logic.
+
+## Defining a Component
+
+A component can be any struct or class. However, structs are preferred as they are lighter.
+
+```cpp
+struct Health {
+    int current;
+    int max;
+};
+
+struct Name {
+    std::string value;
+};
+```
+
+## Registering Components
+
+Before using a component type, it must be registered with the `Registry`. This sets up the storage (`SparseArray`) for that component type.
+
+```cpp
+registry.registerComponent<Health>();
+registry.registerComponent<Name>();
+```
+
+## Adding Components
+
+Use `emplaceComponent` to attach data to an entity.
+
+```cpp
+Entity e = registry.spawnEntity();
+
+// In-place construction (more efficient)
+registry.emplaceComponent<Name>(e, "Player 1");
+```
+
+## Removing Components
+
+Use `removeComponent` to detach data from an entity.
+
+```cpp
+registry.removeComponent<Health>(e);
+```
+
+## Accessing Components
+
+You can retrieve the `SparseArray` for a specific component type to access data directly, though using `Views` is often preferred for iteration.
+
+```cpp
+SparseArray<Health>& healths = registry.getComponents<Health>();
+
+if (healths.has(e)) {
+    Health& h = healths[e]; // Access via entity ID
+    h.current -= 10;
+}
+```
+
+## Storage: Dense Sparse Set
+
+Dense Spars Set is very similar to classic Sparse Array concept. However, this method avoids useless parsing of entities' components
+
+### Internal Structure
+
+* `_data`: A dense `std::vector<Component>` containing the actual data.
+* `_sparse`: A `std::vector<size_t>` where the index is the Entity ID and the value is the index in `_data`.
+* `_denseToEntity`: Maps back from `_data` index to Entity ID (useful for iteration and deletion).
+
+
+# Game engine overview
+
+
+
+# Systems
+
+Systems contain the logic of the application. They operate on entities that have a specific set of components.
+
+## Defining a System
+
+A system must inherit from `ISystem` and implement the `update` method.
+
+```cpp
+#include "ISystem.hpp"
+
+class GravitySystem : public ISystem {
+public:
+    // passing registry in the constructor's parameters is mandatory if you want to subscribe to events
+    GravitySystem(Registry &reg); 
+
+    void update(Registry& reg, float delta) override {
+        // Logic goes here
+    }
+};
+```
+
+## Registering Systems
+
+Systems are managed by the `SystemManager`.
+
+```cpp
+SystemManager sysManager;
+Registry registry;
+
+// Register the system (and optionally pass constructor arguments)
+sysManager.registerSystem<GravitySystem>(registry);
+```
+
+## The Update Loop
+
+The `SystemManager` holds all registered systems. Calling `update` on the manager triggers the `update` method of all systems sequentially.
+
+```cpp
+// In your game loop
+float deltaTime = 0.016f; // Time since last frame
+sysManager.update(registry, deltaTime);
+```
+
+## Example: Gravity System
+
+Here is a complete example of a system that applies gravity to entities with `Position` and `Velocity`.
+
+```cpp
+class GravitySystem : public ISystem {
+public:
+    void update(Registry& reg, float delta) override {
+        // Create a view to iterate over entities with Position AND Velocity
+        auto view = reg.viewComponents<Position, Velocity>();
+
+        for (auto [entity, pos, vel] : view) {
+            // Modify velocity
+            vel.y += 9.81f * delta;
+            
+            // Apply velocity to position
+            pos.x += vel.x * delta;
+            pos.y += vel.y * delta;
+        }
+    }
+};
+```
+
+
+# Game engine overview
+
+
+
+# Views
+
+Views provide an efficient way to iterate over entities that possess a specific set of components. They abstract away the complexity of checking multiple `SparseArray`s.
+
+## Creating a View
+
+Use `registry.viewComponents<ComponentTypes...>()` to create a view.
+
+```cpp
+auto view = registry.viewComponents<Position, Velocity, Drawable>();
+```
+
+## Iterating with Views
+
+Views support standard C++ iterators, so you can use range-based for loops.
+
+### Structured Binding (C++17)
+
+The iterator returns a tuple containing the `Entity` ID (as `size_t`) followed by references to the requested components.
+
+```cpp
+auto view = registry.viewComponents<Position, Velocity>();
+
+for (auto [entityId, pos, vel] : view) {
+    // 'pos' is Position&
+    // 'vel' is Velocity&
+    
+    pos.x += vel.vx;
+    pos.y += vel.vy;
+}
+```
+
+## How it Works
+
+1. **Driver Selection**: The View identifies the smallest `SparseArray` among the requested components. This array becomes the "driver".
+2. **Iteration**: It iterates through the driver array.
+3. **Validation**: For each entity in the driver array, it checks if that entity also exists in all other requested arrays (`has(entityId)`).
+4. **Tuple Creation**: If valid, it dereferences the components from all arrays and yields them.
+
+This ensures that the loop runs $O(N)$ times where $N$ is the size of the smallest component set, making it highly efficient.
+
+
+# Game engine overview
+
+
+
+# Event System
+
+The ECS includes a built-in event bus to allow systems to communicate without tight coupling.
+
+## Concepts
+
+* **Event**: Any struct or class can be an event.
+* **Emit**: Broadcasting an event to all listeners.
+* **Subscribe**: Registering a callback to react to a specific event type.
+
+## Using Events
+
+### 1. Define an Event
+
+```cpp
+struct CollisionEvent {
+    size_t entityA;
+    size_t entityB;
+};
+```
+
+### 2. Subscribe to Events
+
+You can subscribe to events, typically within a System's constructor or initialization phase. Or anywhere you have access to the `Registry`.
+
+```cpp
+registry.subscribe<CollisionEvent>([](const CollisionEvent& event) {
+    std::cout << "Collision between " << event.entityA 
+              << " and " << event.entityB << std::endl;
+});
+```
+
+### 3. Emit Events
+
+Any part of your code with access to the `Registry` can emit events.
+
+```cpp
+void PhysicsSystem::update(Registry& reg, float dt) {
+    // ... detect collision ...
+    reg.emit(CollisionEvent{ entity1, entity2 });
+}
+```
+
+## Internal Implementation
+
+The `EventManager` (wrapped by `Registry`) uses `std::type_index` to map event types to a list of `std::function` callbacks.
+
+```cpp
+// Simplified internal logic
+std::unordered_map<std::type_index, std::any> _listeners;
+```
 
 
 # Protocol Overview
