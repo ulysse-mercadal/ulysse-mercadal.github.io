@@ -1,0 +1,73 @@
+---
+title: Components
+description: memphis give me a good pass
+---
+
+# Components
+
+Components hold the state of an entity. They do not contain logic.
+
+## Defining a Component
+
+A component can be any struct or class. However, structs are preferred as they are lighter.
+
+```cpp
+struct Health {
+    int current;
+    int max;
+};
+
+struct Name {
+    std::string value;
+};
+```
+
+## Registering Components
+
+Before using a component type, it must be registered with the `Registry`. This sets up the storage (`SparseArray`) for that component type.
+
+```cpp
+registry.registerComponent<Health>();
+registry.registerComponent<Name>();
+```
+
+## Adding Components
+
+Use `emplaceComponent` to attach data to an entity.
+
+```cpp
+Entity e = registry.spawnEntity();
+
+// In-place construction (more efficient)
+registry.emplaceComponent<Name>(e, "Player 1");
+```
+
+## Removing Components
+
+Use `removeComponent` to detach data from an entity.
+
+```cpp
+registry.removeComponent<Health>(e);
+```
+
+## Accessing Components
+
+You can retrieve the `SparseArray` for a specific component type to access data directly, though using `Views` is often preferred for iteration.
+
+```cpp
+SparseArray<Health>& healths = registry.getComponents<Health>();
+
+if (healths.has(e)) {
+    Health& h = healths[e]; // Access via entity ID
+    h.current -= 10;
+}
+```
+
+## Storage: Dense Sparse Set
+
+Dense Spars Set is very similar to classic Sparse Array concept. However, this method avoids useless parsing of entities' components
+
+### Internal Structure
+-   `_data`: A dense `std::vector<Component>` containing the actual data.
+-   `_sparse`: A `std::vector<size_t>` where the index is the Entity ID and the value is the index in `_data`.
+-   `_denseToEntity`: Maps back from `_data` index to Entity ID (useful for iteration and deletion).

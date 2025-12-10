@@ -1,0 +1,56 @@
+---
+title: Events
+description: memphis give me a good pass
+---
+
+# Event System
+
+The ECS includes a built-in event bus to allow systems to communicate without tight coupling.
+
+## Concepts
+
+-   **Event**: Any struct or class can be an event.
+-   **Emit**: Broadcasting an event to all listeners.
+-   **Subscribe**: Registering a callback to react to a specific event type.
+
+## Using Events
+
+### 1. Define an Event
+
+```cpp
+struct CollisionEvent {
+    size_t entityA;
+    size_t entityB;
+};
+```
+
+### 2. Subscribe to Events
+
+You can subscribe to events, typically within a System's constructor or initialization phase. Or anywhere you have access to the `Registry`.
+
+```cpp
+registry.subscribe<CollisionEvent>([](const CollisionEvent& event) {
+    std::cout << "Collision between " << event.entityA 
+              << " and " << event.entityB << std::endl;
+});
+```
+
+### 3. Emit Events
+
+Any part of your code with access to the `Registry` can emit events.
+
+```cpp
+void PhysicsSystem::update(Registry& reg, float dt) {
+    // ... detect collision ...
+    reg.emit(CollisionEvent{ entity1, entity2 });
+}
+```
+
+## Internal Implementation
+
+The `EventManager` (wrapped by `Registry`) uses `std::type_index` to map event types to a list of `std::function` callbacks.
+
+```cpp
+// Simplified internal logic
+std::unordered_map<std::type_index, std::any> _listeners;
+```

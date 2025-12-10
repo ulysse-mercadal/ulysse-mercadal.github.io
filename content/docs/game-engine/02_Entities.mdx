@@ -1,0 +1,47 @@
+---
+title: Entities
+description: memphis give me a good pass
+---
+
+# Entities
+
+Entities are the primary objects in the ECS world. An entity is essentially just an ID (unique identifier).
+
+## The `Entity` Class
+
+The `Entity` class is a lightweight wrapper around a `size_t` ID and a generation count (used to recycle IDs safely).
+
+```cpp
+class Entity {
+public:
+    std::size_t id() const;
+    std::size_t generation() const;
+    // ...
+};
+```
+
+## Managing Entities
+
+All entity management is done through the `Registry`.
+
+### Spawning an Entity
+
+To create a new entity, use `spawnEntity()`. This returns an `Entity` object.
+
+```cpp
+Registry registry;
+Entity myEntity = registry.spawnEntity();
+```
+
+### Killing an Entity
+
+To destroy an entity, use `killEntity(entity)`. This will also automatically remove all components associated with this entity.
+
+```cpp
+registry.killEntity(myEntity);
+```
+
+### Lifecycle
+
+1.  **Creation**: When `spawnEntity()` is called, the `EntityManager` finds a free ID. If recycled IDs are available, it reuses one (incrementing its generation). Otherwise, it creates a new ID.
+2.  **Destruction**: When `killEntity()` is called, the `Registry` invokes registered "erasers" to remove components from all sparse arrays for that entity ID. The ID is then returned to the pool of free IDs.

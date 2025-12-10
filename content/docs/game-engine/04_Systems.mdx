@@ -1,0 +1,71 @@
+---
+title: Systems
+description: memphis give me a good pass
+---
+
+# Systems
+
+Systems contain the logic of the application. They operate on entities that have a specific set of components.
+
+## Defining a System
+
+A system must inherit from `ISystem` and implement the `update` method.
+
+```cpp
+#include "ISystem.hpp"
+
+class GravitySystem : public ISystem {
+public:
+    // passing registry in the constructor's parameters is mandatory if you want to subscribe to events
+    GravitySystem(Registry &reg); 
+
+    void update(Registry& reg, float delta) override {
+        // Logic goes here
+    }
+};
+```
+
+## Registering Systems
+
+Systems are managed by the `SystemManager`.
+
+```cpp
+SystemManager sysManager;
+Registry registry;
+
+// Register the system (and optionally pass constructor arguments)
+sysManager.registerSystem<GravitySystem>(registry);
+```
+
+## The Update Loop
+
+The `SystemManager` holds all registered systems. Calling `update` on the manager triggers the `update` method of all systems sequentially.
+
+```cpp
+// In your game loop
+float deltaTime = 0.016f; // Time since last frame
+sysManager.update(registry, deltaTime);
+```
+
+## Example: Gravity System
+
+Here is a complete example of a system that applies gravity to entities with `Position` and `Velocity`.
+
+```cpp
+class GravitySystem : public ISystem {
+public:
+    void update(Registry& reg, float delta) override {
+        // Create a view to iterate over entities with Position AND Velocity
+        auto view = reg.viewComponents<Position, Velocity>();
+
+        for (auto [entity, pos, vel] : view) {
+            // Modify velocity
+            vel.y += 9.81f * delta;
+            
+            // Apply velocity to position
+            pos.x += vel.x * delta;
+            pos.y += vel.y * delta;
+        }
+    }
+};
+```

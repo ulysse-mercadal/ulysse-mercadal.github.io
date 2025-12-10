@@ -1,0 +1,45 @@
+---
+title: Views
+description: memphis give me a good pass
+---
+
+# Views
+
+Views provide an efficient way to iterate over entities that possess a specific set of components. They abstract away the complexity of checking multiple `SparseArray`s.
+
+## Creating a View
+
+Use `registry.viewComponents<ComponentTypes...>()` to create a view.
+
+```cpp
+auto view = registry.viewComponents<Position, Velocity, Drawable>();
+```
+
+## Iterating with Views
+
+Views support standard C++ iterators, so you can use range-based for loops.
+
+### Structured Binding (C++17)
+
+The iterator returns a tuple containing the `Entity` ID (as `size_t`) followed by references to the requested components.
+
+```cpp
+auto view = registry.viewComponents<Position, Velocity>();
+
+for (auto [entityId, pos, vel] : view) {
+    // 'pos' is Position&
+    // 'vel' is Velocity&
+    
+    pos.x += vel.vx;
+    pos.y += vel.vy;
+}
+```
+
+## How it Works
+
+1.  **Driver Selection**: The View identifies the smallest `SparseArray` among the requested components. This array becomes the "driver".
+2.  **Iteration**: It iterates through the driver array.
+3.  **Validation**: For each entity in the driver array, it checks if that entity also exists in all other requested arrays (`has(entityId)`).
+4.  **Tuple Creation**: If valid, it dereferences the components from all arrays and yields them.
+
+This ensures that the loop runs $O(N)$ times where $N$ is the size of the smallest component set, making it highly efficient.
