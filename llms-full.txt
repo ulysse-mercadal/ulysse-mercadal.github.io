@@ -1058,7 +1058,7 @@ int main() {
 ```
 
 
-# Game engine overview
+# Entities
 
 
 
@@ -1106,7 +1106,7 @@ registry.killEntity(myEntity);
 2. **Destruction**: When `killEntity()` is called, the `Registry` invokes registered "erasers" to remove components from all sparse arrays for that entity ID. The ID is then returned to the pool of free IDs.
 
 
-# Game engine overview
+# Components
 
 
 
@@ -1181,7 +1181,7 @@ Dense Spars Set is very similar to classic Sparse Array concept. However, this m
 * `_denseToEntity`: Maps back from `_data` index to Entity ID (useful for iteration and deletion).
 
 
-# Game engine overview
+# Systems
 
 
 
@@ -1253,7 +1253,7 @@ public:
 ```
 
 
-# Game engine overview
+# Views
 
 
 
@@ -1299,7 +1299,7 @@ for (auto [entityId, pos, vel] : view) {
 This ensures that the loop runs $O(N)$ times where $N$ is the size of the smallest component set, making it highly efficient.
 
 
-# Game engine overview
+# Events
 
 
 
