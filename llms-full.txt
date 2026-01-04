@@ -967,393 +967,8 @@ if (isWalking) {
 ```
 
 
-# Game engine overview
+# work in progress here
 
-
-
-# ECS Architecture Overview
-
-The **Entity Component System (ECS)** is a software architectural pattern mostly used in video game development for the representation of game world objects. An ECS comprises entities composed of components of data, with systems which operate on entities' components.
-
-## Core Concepts
-
-### 1. Entity
-
-An **Entity** is a general purpose object. Ideally, it consists only of a unique identifier. They "exist" by the virtue of being managed by the `Registry` and having components attached to them.
-
-### 2. Component
-
-A **Component** is the raw data for one aspect of the object, and how it interacts with the world. For example, a `Position` component might just hold `x` and `y` coordinates.
-
-### 3. System
-
-A **System** performs global actions on every Entity that possesses a component of the same aspect as that System. For example, a `Movement` system might iterate over all entities that have a `Position` and `Velocity` component, and update the position based on the velocity.
-
-### 4. Registry
-
-The **Registry** is the central hub of the ECS. It manages:
-
-* **Entities**: Creation and destruction.
-* **Components**: Storage (via `SparseArray`), addition, and removal.
-* **Events**: A communication bus for decoupled interaction.
-
-## Diagram
-
-<Mermaid
-  chart="graph TD
-    Reg[Registry] --> EM[EntityManager]
-    Reg --> EvM[EventManager]
-    Reg --> Components[Component Arrays]
-    
-    EM --> Entity[Entity IDs]
-    
-    Components --> SA1[SparseArray<Position>]
-    Components --> SA2[SparseArray<Velocity>]
-    
-    System[System] --> Reg
-    System --> View[View]
-    View --> SA1
-    View --> SA2"
-/>
-
-## Quick Start
-
-```cpp
-#include "Registry.hpp"
-#include "SystemManager.hpp"
-
-// 1. Define Components
-struct Position { float x, y; };
-struct Velocity { float vx, vy; };
-
-// 2. Define System
-class MovementSystem : public ISystem {
-public:
-    void update(Registry& r, float dt) override {
-        // ... logic
-    }
-};
-
-int main() {
-    Registry registry;
-    SystemManager sysManager;
-
-    // 3. Register Components
-    registry.registerComponent<Position>();
-    registry.registerComponent<Velocity>();
-
-    // 4. Register System
-    sysManager.registerSystem<MovementSystem>(registry);
-
-    // 5. Create Entity
-    auto entity = registry.spawnEntity();
-    registry.addComponent<Position>(entity, 0.0f, 0.0f);
-    registry.addComponent<Velocity>(entity, 1.0f, 0.0f);
-
-    // 6. Game Loop
-    while (true) {
-        sysManager.update(registry, 0.016f);
-    }
-}
-```
-
-
-# Entities
-
-
-
-# Entities
-
-Entities are the primary objects in the ECS world. An entity is essentially just an ID (unique identifier).
-
-## The `Entity` Class
-
-The `Entity` class is a lightweight wrapper around a `size_t` ID and a generation count (used to recycle IDs safely).
-
-```cpp
-class Entity {
-public:
-    std::size_t id() const;
-    std::size_t generation() const;
-    // ...
-};
-```
-
-## Managing Entities
-
-All entity management is done through the `Registry`.
-
-### Spawning an Entity
-
-To create a new entity, use `spawnEntity()`. This returns an `Entity` object.
-
-```cpp
-Registry registry;
-Entity myEntity = registry.spawnEntity();
-```
-
-### Killing an Entity
-
-To destroy an entity, use `killEntity(entity)`. This will also automatically remove all components associated with this entity.
-
-```cpp
-registry.killEntity(myEntity);
-```
-
-### Lifecycle
-
-1. **Creation**: When `spawnEntity()` is called, the `EntityManager` finds a free ID. If recycled IDs are available, it reuses one (incrementing its generation). Otherwise, it creates a new ID.
-2. **Destruction**: When `killEntity()` is called, the `Registry` invokes registered "erasers" to remove components from all sparse arrays for that entity ID. The ID is then returned to the pool of free IDs.
-
-
-# Components
-
-
-
-# Components
-
-Components hold the state of an entity. They do not contain logic.
-
-## Defining a Component
-
-A component can be any struct or class. However, structs are preferred as they are lighter.
-
-```cpp
-struct Health {
-    int current;
-    int max;
-};
-
-struct Name {
-    std::string value;
-};
-```
-
-## Registering Components
-
-Before using a component type, it must be registered with the `Registry`. This sets up the storage (`SparseArray`) for that component type.
-
-```cpp
-registry.registerComponent<Health>();
-registry.registerComponent<Name>();
-```
-
-## Adding Components
-
-Use `emplaceComponent` to attach data to an entity.
-
-```cpp
-Entity e = registry.spawnEntity();
-
-// In-place construction (more efficient)
-registry.emplaceComponent<Name>(e, "Player 1");
-```
-
-## Removing Components
-
-Use `removeComponent` to detach data from an entity.
-
-```cpp
-registry.removeComponent<Health>(e);
-```
-
-## Accessing Components
-
-You can retrieve the `SparseArray` for a specific component type to access data directly, though using `Views` is often preferred for iteration.
-
-```cpp
-SparseArray<Health>& healths = registry.getComponents<Health>();
-
-if (healths.has(e)) {
-    Health& h = healths[e]; // Access via entity ID
-    h.current -= 10;
-}
-```
-
-## Storage: Dense Sparse Set
-
-Dense Spars Set is very similar to classic Sparse Array concept. However, this method avoids useless parsing of entities' components
-
-### Internal Structure
-
-* `_data`: A dense `std::vector<Component>` containing the actual data.
-* `_sparse`: A `std::vector<size_t>` where the index is the Entity ID and the value is the index in `_data`.
-* `_denseToEntity`: Maps back from `_data` index to Entity ID (useful for iteration and deletion).
-
-
-# Systems
-
-
-
-# Systems
-
-Systems contain the logic of the application. They operate on entities that have a specific set of components.
-
-## Defining a System
-
-A system must inherit from `ISystem` and implement the `update` method.
-
-```cpp
-#include "ISystem.hpp"
-
-class GravitySystem : public ISystem {
-public:
-    // passing registry in the constructor's parameters is mandatory if you want to subscribe to events
-    GravitySystem(Registry &reg); 
-
-    void update(Registry& reg, float delta) override {
-        // Logic goes here
-    }
-};
-```
-
-## Registering Systems
-
-Systems are managed by the `SystemManager`.
-
-```cpp
-SystemManager sysManager;
-Registry registry;
-
-// Register the system (and optionally pass constructor arguments)
-sysManager.registerSystem<GravitySystem>(registry);
-```
-
-## The Update Loop
-
-The `SystemManager` holds all registered systems. Calling `update` on the manager triggers the `update` method of all systems sequentially.
-
-```cpp
-// In your game loop
-float deltaTime = 0.016f; // Time since last frame
-sysManager.update(registry, deltaTime);
-```
-
-## Example: Gravity System
-
-Here is a complete example of a system that applies gravity to entities with `Position` and `Velocity`.
-
-```cpp
-class GravitySystem : public ISystem {
-public:
-    void update(Registry& reg, float delta) override {
-        // Create a view to iterate over entities with Position AND Velocity
-        auto view = reg.viewComponents<Position, Velocity>();
-
-        for (auto [entity, pos, vel] : view) {
-            // Modify velocity
-            vel.y += 9.81f * delta;
-            
-            // Apply velocity to position
-            pos.x += vel.x * delta;
-            pos.y += vel.y * delta;
-        }
-    }
-};
-```
-
-
-# Views
-
-
-
-# Views
-
-Views provide an efficient way to iterate over entities that possess a specific set of components. They abstract away the complexity of checking multiple `SparseArray`s.
-
-## Creating a View
-
-Use `registry.viewComponents<ComponentTypes...>()` to create a view.
-
-```cpp
-auto view = registry.viewComponents<Position, Velocity, Drawable>();
-```
-
-## Iterating with Views
-
-Views support standard C++ iterators, so you can use range-based for loops.
-
-### Structured Binding (C++17)
-
-The iterator returns a tuple containing the `Entity` ID (as `size_t`) followed by references to the requested components.
-
-```cpp
-auto view = registry.viewComponents<Position, Velocity>();
-
-for (auto [entityId, pos, vel] : view) {
-    // 'pos' is Position&
-    // 'vel' is Velocity&
-    
-    pos.x += vel.vx;
-    pos.y += vel.vy;
-}
-```
-
-## How it Works
-
-1. **Driver Selection**: The View identifies the smallest `SparseArray` among the requested components. This array becomes the "driver".
-2. **Iteration**: It iterates through the driver array.
-3. **Validation**: For each entity in the driver array, it checks if that entity also exists in all other requested arrays (`has(entityId)`).
-4. **Tuple Creation**: If valid, it dereferences the components from all arrays and yields them.
-
-This ensures that the loop runs $O(N)$ times where $N$ is the size of the smallest component set, making it highly efficient.
-
-
-# Events
-
-
-
-# Event System
-
-The ECS includes a built-in event bus to allow systems to communicate without tight coupling.
-
-## Concepts
-
-* **Event**: Any struct or class can be an event.
-* **Emit**: Broadcasting an event to all listeners.
-* **Subscribe**: Registering a callback to react to a specific event type.
-
-## Using Events
-
-### 1. Define an Event
-
-```cpp
-struct CollisionEvent {
-    size_t entityA;
-    size_t entityB;
-};
-```
-
-### 2. Subscribe to Events
-
-You can subscribe to events, typically within a System's constructor or initialization phase. Or anywhere you have access to the `Registry`.
-
-```cpp
-registry.subscribe<CollisionEvent>([](const CollisionEvent& event) {
-    std::cout << "Collision between " << event.entityA 
-              << " and " << event.entityB << std::endl;
-});
-```
-
-### 3. Emit Events
-
-Any part of your code with access to the `Registry` can emit events.
-
-```cpp
-void PhysicsSystem::update(Registry& reg, float dt) {
-    // ... detect collision ...
-    reg.emit(CollisionEvent{ entity1, entity2 });
-}
-```
-
-## Internal Implementation
-
-The `EventManager` (wrapped by `Registry`) uses `std::type_index` to map event types to a list of `std::function` callbacks.
-
-```cpp
-// Simplified internal logic
-std::unordered_map<std::type_index, std::any> _listeners;
-```
 
 
 # Protocol Overview
@@ -1414,30 +1029,32 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 
 > * The same command ID is used for both **requests** and **notifications/responses**
 
-| ID   | Name            | protocol | Description                                                                                |   Broadcast  |
-| ---- | --------------- | :------: | ------------------------------------------------------------------------------------------ | :----------: |
-| 0x00 | `CONNECTION`    |   `TCP`  | Initiates connection with the server.                                                      |     `no`     |
-| 0x01 | `DISCONNECTION` |   `TCP`  | Signals disconnection from the server. may trigger a `LEAVE_LOBBY` if player in game       |     `no`     |
-| 0x02 | `GET_LOBBY`     |   `TCP`  | Request or give all the existing lobby                                                     |     `no`     |
-| 0x03 | `JOIN_LOBBY`    |   `TCP`  | Request or1 signal a new player in the lobby, The server replies with the new player list. |     `yes`    |
-| 0x04 | `LEAVE_LOBBY`   |   `TCP`  | Request to leave the current lobby.                                                        |     `yes`    |
-| 0x05 | `READY`         |   `TCP`  | Change a player’s readiness state in the lobby.                                            |     `yes`    |
-| 0x06 | `START_GAME`    |   `TCP`  | Ask or notify the match is begining.                                                       |     `yes`    |
-| 0x07 | `GAME_LOADED`   |   `TCP`  | Sent once local assets are loaded. Server waits before sending `GAME_START`.               |     `no`     |
-| 0x08 | `GAME_START`    |   `TCP`  | Final signal from the server that the game loop is starting.                               |     `yes`    |
-| 0x09 | `PAUSE`         |   `TCP`  | Update game pause state.                                                                   |     `yes`    |
-| 0x0A | `WIN`           |   `TCP`  | Notifies victory                                                                           |     `yes`    |
-| 0x0B | `LOSE`          |   `TCP`  | Notifies defeat                                                                            |     `yes`    |
-| 0x0C | `DEAD`          |   `TCP`  | Notifies that a player or entity has been destroyed.                                       |     `yes`    |
-| 0x0D | `INPUT`         |   `UDP`  | Reports a player input action, identified by a key for more modularity.                    |     `yes`    |
-| 0x0E | `MOVE`          |   `UDP`  | Updates a player’s position in 3D space (`x, y, z`).                                       |     `yes`    |
-| 0x0F | `SET_POSITION`  |   `UDP`  | Forces an absolute position update.                                                        |     `yes`    |
-| 0x10 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of an entity.                                                 |     `no`     |
-| 0x11 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                      | `no` / `yes` |
-| 0x12 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                  |     `yes`    |
-| 0x13 | `ABILITY`       |   `UDP`  | notify that a entity use one of his abilities.                                             |     `yes`    |
-| 0x14 | `SCORE`         |   `UDP`  | Updates a player’s score.                                                                  |     `no`     |
-| 0x15 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                       |     `yes`    |
+| ID   | Name            | Protocol | Description                                                                               |   Broadcast  |
+| ---- | --------------- | :------: | ----------------------------------------------------------------------------------------- | :----------: |
+| 0x00 | `CONNECTION`    |   `TCP`  | Initiates connection with the server.                                                     |     `no`     |
+| 0x01 | `DISCONNECTION` |   `TCP`  | Signals disconnection from the server. may trigger a `LEAVE_LOBBY` if player in game      |     `no`     |
+| 0x02 | `GET_LOBBY`     |   `TCP`  | Request or give all the existing lobby                                                    |     `no`     |
+| 0x03 | `JOIN_LOBBY`    |   `TCP`  | Request or signal a new player in the lobby, The server replies with the new player list. |     `yes`    |
+| 0x04 | `LEAVE_LOBBY`   |   `TCP`  | Request to leave the current lobby.                                                       |     `yes`    |
+| 0x05 | `READY`         |   `TCP`  | Change a player's readiness state in the lobby.                                           |     `yes`    |
+| 0x06 | `START_GAME`    |   `TCP`  | Ask or notify the match is begining.                                                      |     `yes`    |
+| 0x07 | `GAME_LOADED`   |   `TCP`  | Sent once local assets are loaded. Server waits before sending `GAME_START`.              |     `no`     |
+| 0x08 | `GAME_START`    |   `TCP`  | Final signal from the server that the game loop is starting.                              |     `yes`    |
+| 0x09 | `PAUSE`         |   `TCP`  | Update game pause state.                                                                  |     `yes`    |
+| 0x0A | `WIN`           |   `TCP`  | Notifies victory                                                                          |     `yes`    |
+| 0x0B | `LOSE`          |   `TCP`  | Notifies defeat                                                                           |     `yes`    |
+| 0x0C | `DEAD`          |   `TCP`  | Notifies that a player or entity has been destroyed.                                      |     `yes`    |
+| 0x0D | `INPUT`         |   `UDP`  | Reports a player input action, identified by a key for more modularity.                   |     `yes`    |
+| 0x0E | `MOVE`          |   `UDP`  | Updates a player's position in 3D space (`x, y, z`).                                      |     `yes`    |
+| 0x0F | `SET_POSITION`  |   `UDP`  | Forces an absolute position update.                                                       |     `yes`    |
+| 0x10 | `GET_COORDS`    |   `UDP`  | Requests current coordinates of an entity.                                                |     `no`     |
+| 0x11 | `PLAYER_INFO`   |   `UDP`  | Requests or give detailed player data                                                     | `no` / `yes` |
+| 0x12 | `DAMAGE`        |   `UDP`  | Notifies that an entity has taken damage.                                                 |     `yes`    |
+| 0x13 | `ABILITY`       |   `UDP`  | notify that a entity use one of his abilities.                                            |     `yes`    |
+| 0x14 | `SCORE`         |   `UDP`  | Updates a player's score.                                                                 |     `no`     |
+| 0x15 | `MESSAGE`       |   `UDP`  | Sends a text message                                                                      |     `yes`    |
+| 0x16 | `SPAWN`         |   `UDP`  | Notifies clients about a new entity spawning in the game.                                 |     `yes`    |
+| 0x17 | `LOBBY_UPDATE`  |   `TCP`  | Updates lobby information or requests lobby update.                                       |     `no`     |
 
 
 # Protocole limitations
@@ -1448,15 +1065,16 @@ Each message in the R-Type Protocol is identified by an 8-bit **command ID**. Th
 
 ## param size
 
-* this ptococole can't have more than `255` **versions id**, because it's a `uint8`
+* this protocol can't have more than `31` **commands**, because the command ID field is 5 bits (max value 31)
+* this protocol can't have more than `255` **versions id**, because it's a `uint8`
 * a server can't host more than `255` **players**, because it's a `uint8`
-* a server can't host more than `255` **lobbys**, because it's a `uint8`
+* a server can't host more than `255` **lobbies**, because it's a `uint8`
 * a lobby can't host more than `255` **players**, because it's a `uint8`
 * you can't handle more than `255` input **keys id**, because it's a `uint8`
 * a **player name** must be a `string` with a length between `1`, and `20` chars
 * a **lobby name** must be a `string` with a length between `1`, and `20` chars
 * a level can't have more than `65534` **npcs** because it's a `uint16`
-* a player can't take more than `65534`  **dammages** because it's a `uint16`
+* a player can't take more than `65534`  **damages** because it's a `uint16`
 
 
 # Packet Structure
@@ -1609,6 +1227,8 @@ RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
        10.20. Ability (0x13)  . . . . . . . . . . . . . . . . . . 29-30
        10.21. Score (0x14)  . . . . . . . . . . . . . . . . . . . .  30
        10.22. Message (0x15)  . . . . . . . . . . . . . . . . . . 30-31
+       10.23. Spawn (0x16)  . . . . . . . . . . . . . . . . . . . 31-32
+       10.24. Lobby Update (0x17)  . . . . . . . . . . . . . . . .32-33
 
 
 
@@ -1836,6 +1456,14 @@ RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
    +------+------------------+----------+------------------------+---+
    | 0x15 | MESSAGE          | UDP      | Sends a text message   | Y |
    +------+------------------+----------+------------------------+---+
+   | 0x16 | SPAWN            | UDP      | Notifies clients about | Y |
+   |      |                  |          | a new entity spawning|   |
+   |      |                  |          | in the game.           |   |
+   +------+------------------+----------+------------------------+---+
+   | 0x17 | LOBBY_UPDATE     | TCP      | Updates lobby          | N |
+   |      |                  |          | information or         |   |
+   |      |                  |          | requests lobby update. |   |
+   +------+------------------+----------+------------------------+---+
 
    Note: B column indicates Broadcast (Y = yes, N = no, * = depends)
 
@@ -1844,12 +1472,15 @@ RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
 
    Param size:
 
-   - This ptococole can't have more than 255 versions id, because
+   - This protocol can't have more than 31 commands, because the
+     command ID field is 5 bits (max value 31)
+
+   - This protocol can't have more than 255 versions id, because
      it's a uint8
 
    - A server can't host more than 255 players, because it's a uint8
 
-   - A server can't host more than 255 lobbys, because it's a uint8
+   - A server can't host more than 255 lobbies, because it's a uint8
 
    - A lobby can't host more than 255 players, because it's a uint8
 
@@ -1864,7 +1495,7 @@ RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
 
    - A level can't have more than 65534 npcs because it's a uint16
 
-   - A player can't take more than 65534 dammages because it's a
+   - A player can't take more than 65534 damages because it's a
      uint16
 
 
@@ -2772,20 +2403,21 @@ RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
    +---------------+-----------+------------------+
    | Direction     | Code      | Body Length      |
    +---------------+-----------+------------------+
-   | 01            | 01101     | 000000010        |
+   | 01            | 01101     | 000000110        |
    +---------------+-----------+------------------+
 
    Example:
-   Body length = 2 - 000000010
-   Raw header bytes: 0x5A 0x02
-   (Binary: 01 01101 000000010 - 01011010 00000010)
+   Body length = 6 - 000000110
+   Raw header bytes: 0x5A 0x06
+   (Binary: 01 01101 000000110 - 01011010 00000110)
 
    Body:
    +--------------+----------+-----------------------------+
    | Size (bytes) | Type     | Content                     |
    +--------------+----------+-----------------------------+
    | 1            | uint8    | Key ID                      |
-   | 1/8          | bool     | Action (1=press, 0=release) |
+   | 1            | bool     | Action (1=press, 0=release) |
+   | 4            | uint32   | Client ID                   |
    +--------------+----------+-----------------------------+
 
    10.14.2. Server -> Client
@@ -2801,7 +2433,7 @@ RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
    +---------------+-----------+------------------+
    | Direction     | Code      | Body Length      |
    +---------------+-----------+------------------+
-   | 00            | 01101     | 000000010        |
+   | 00            | 01101     | 000000011        |
    +---------------+-----------+------------------+
 
 
@@ -2811,21 +2443,19 @@ RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
 
 
    Example (key_id = 5, press, status = LATER):
-   Body length = 2 - 000000010
-   Raw header bytes: 0x1A 0x02
-   (Binary: 00 01101 000000010 - 00011010 00000010)
+   Body length = 3 - 000000011
+   Raw header bytes: 0x1A 0x03
+   (Binary: 00 01101 000000011 - 00011010 00000011)
 
    Body:
    +--------------+----------+-----------------------------+
    | Size (bytes) | Type     | Content                     |
    +--------------+----------+-----------------------------+
    | 1            | uint8    | Key ID (echoed)             |
-   | 1/8          | bool     | Action (echoed)             |
-   | 2/8          | enum     | Status (00=FAILED,          |
-   |              |          | 01=SUCCESS, 10=LATER)       |
+   | 1            | bool     | Action (echoed)             |
+   | 1            | uint8    | Status (0=FAILED,           |
+   |              |          | 1=SUCCESS, 2=LATER)         |
    +--------------+----------+-----------------------------+
-
-
 10.15. Move (ID 14)
 
    This command is sent by the server to notify a client of a
@@ -3266,41 +2896,115 @@ RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
    +--------------+----------+-----------------------------+
 
 
+10.23. Spawn (ID 22)
+
+   This command is sent by the server to notify clients that a new
+   entity has spawned in the game world. This could be a player,
+   enemy, or other game object.
+
+   Warning! This command must be sent over UDP. It is only sent by
+   the server.
+
+   10.23.1. Server -> Client
+
+   Context:
+   The server broadcasts a spawn event (e.g., new enemy appears,
+   player joins mid-game).
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 10110     | 21               |
+   +---------------+-----------+------------------+
+
+   Example (Entity ID = 1000, Entity type = 5, Position = 10, 20, 30):
+   Body length = 21 - 00010101
+   Header bytes: 0x2D 0x15
+   (Binary: 00 10110 00010101 - 00101101 00010101)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 4            | uint32   | Entity ID                   |
+   | 4            | int32    | Entity type                 |
+   | 4            | int32    | X position                  |
+   | 4            | int32    | Y position                  |
+   | 4            | int32    | Z position                  |
+   | 4            | uint32   | Client ID (if applicable)   |
+   +--------------+----------+-----------------------------+
+
+
+10.24. Lobby Update (ID 23)
+
+   This command is used to update lobby information on the server or
+   to receive lobby updates from the server. It can be used to update
+   lobby status, player count, or other lobby metadata.
+
+   Warning! This command must be sent over TCP.
+
+   10.24.1. Client -> Server
+
+   Context:
+   The client requests to update lobby information or creates a new
+   lobby.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 01            | 10111     | N                |
+   +---------------+-----------+------------------+
+
+   Where N is the total body length based on lobby data.
+
+   Example (lobby update request):
+   Header bytes: 0x5E 0xXX
+   (Binary: 01 10111 + body length)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1            | uint8    | Lobby ID                    |
+   | 1            | uint8    | Player count                |
+   | N            | string   | Lobby name                  |
+   | 2            | uint16   | Port number                 |
+   | 1            | uint8    | Status (0=Waiting, 1=Playing)|
+   +--------------+----------+-----------------------------+
+
+   10.24.2. Server -> Client
+
+   Context:
+   The server responds to a lobby update request or broadcasts lobby
+   changes.
+
+   Header:
+   +---------------+-----------+------------------+
+   | Direction     | Code      | Body Length      |
+   +---------------+-----------+------------------+
+   | 00            | 10111     | 1                |
+   +---------------+-----------+------------------+
+
+   Example:
+   Body length = 1 - 000000001
+   Header bytes: 0x1E 0x01
+   (Binary: 00 10111 000000001 - 00011110 00000001)
+
+   Body:
+   +--------------+----------+-----------------------------+
+   | Size (bytes) | Type     | Content                     |
+   +--------------+----------+-----------------------------+
+   | 1/8          | bool     | Success status (1=success,  |
+   |              |          | 0=failure)                  |
+   +--------------+----------+-----------------------------+
 
 
 
+Ulysse Mercadal             Informational                     [Page 33]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Ulysse Mercadal             Informational                     [Page 32]
+RFC XXXX                Protocole R-Type v1.0.1        28 November 2025
 ```
 
 
@@ -3320,23 +3024,24 @@ This command is used to **initiate and accept** a new client connection to the s
 
 ### Context
 
-The client attempts to connect to the server and declares the protocol version it supports.
+The client attempts to connect to the server and declares the protocol version and client type.
 
 ### Header
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `01`   | `00000` | `000000001` |
+|    `01`   | `00000` | `000000010` |
 
-**Raw header bytes:** `0x40 0x01`
+**Raw header bytes:** `0x40 0x02`
 
-*(Binary: `01 00000 000000001` - `01000000 00000001`)*
+*(Binary: `01 00000 000000010` - `01000000 00000010`)*
 
 ### Body
 
-| Size (bytes) |   Type  | Content                 |
-| :----------: | :-----: | ----------------------- |
-|       1      | `uint8` | Protocol version number |
+| Size (bytes) |   Type  | Content                                              |
+| :----------: | :-----: | ---------------------------------------------------- |
+|       1      | `uint8` | Protocol version number                              |
+|       1      |  `bool` | Client type (0 = regular client, 1 = special client) |
 
 ***
 
@@ -3344,23 +3049,24 @@ The client attempts to connect to the server and declares the protocol version i
 
 ### Context
 
-The server responds to the connection request, indicating acceptance or rejection.
+The server responds to the connection request, indicating acceptance or rejection and providing player ID.
 
 ### Header
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `00`   | `00000` | `000000001` |
+|    `00`   | `00000` | `000000010` |
 
-**Raw header bytes:** `0x00 0x01`
+**Raw header bytes:** `0x00 0x02`
 
-*(Binary: `00 00000 000000001` - `00000000 00000001`)*
+*(Binary: `00 00000 000000010` - `00000000 00000010`)*
 
 ### Body
 
-| Size (bytes) |  Type  | Content                                           |
-| :----------: | :----: | ------------------------------------------------- |
-|      1/8     | `bool` | Connection status: `1` = accepted, `0` = rejected |
+| Size (bytes) |   Type  | Content                                           |
+| :----------: | :-----: | ------------------------------------------------- |
+|       1      | `uint8` | Player ID assigned by server                      |
+|      1/8     |  `bool` | Connection status: `1` = accepted, `0` = rejected |
 
 
 # 0x01 - Disconnection
@@ -3436,7 +3142,7 @@ Header bytes: `0x02 0x08`
 
 # Get Lobby (ID 2)
 
-This command is used to **request the list of active lobbies** from the server, or for the server to **respond with that list**. Each lobby entry includes its name and current player count.
+This command is used to **request the list of active lobbies** from the server, or for the server to **respond with that list**. Each lobby entry includes its name, player count, host, port, and status.
 
 > **This command must be sent over TCP.**
 
@@ -3446,21 +3152,26 @@ This command is used to **request the list of active lobbies** from the server, 
 
 ### Context
 
-The client requests the full list of available lobbies (e.g., for a matchmaking menu).
+The client requests the full list of available lobbies (e.g., for a matchmaking menu). Optionally filter by lobby name and port.
 
 ### Header
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `01`   | `00010` | `000000000` |
+|    `01`   | `00010` |     *N*     |
 
-**Raw header bytes:** `0x44 0x00`
+> Where *N* = variable length based on filter parameters.
 
-*(Binary: `01 00010 000000000` - `01000100 00000000`)*
+**Raw header bytes:** `0x44 0xXX`
+
+*(Binary: `01 00010` + body length)*
 
 ### Body
 
-None.
+| Size (bytes) |   Type   | Content                                          |
+| :----------: | :------: | :----------------------------------------------- |
+|      *N*     | `string` | Lobby name filter (optional, empty if no filter) |
+|       2      | `uint16` | Port filter (optional, 0 if no filter)           |
 
 ***
 
@@ -3472,24 +3183,28 @@ The server sends the current list of lobbies in response to a `GET_LOBBY` reques
 
 ### Header
 
-| Direction |   Code  |  Body Length |
-| :-------: | :-----: | :----------: |
-|    `00`   | `00010` | *N\*(M + 3)* |
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `00010` |  *Variable* |
 
-> Where *N* is the total size of the lobby list.
-
-> Where *M* is the total size of the lobby name.
+> Where body length depends on number of lobbies and their names.
 
 ### Body
 
-The body is a **concatenated list of lobby entries**. Each entry has the following layout:
+The body is a **serialized list of lobby entries**. Each entry has the following layout:
 
-| Size (bytes) |   Type   | Content       |
-| :----------: | :------: | ------------- |
-|       3      |  `uint8` | player number |
-|      *M*     | `string` | Lobby name    |
+| Size (bytes) |   Type   | Content                       |
+| :----------: | :------: | :---------------------------- |
+|       1      |  `uint8` | Lobby ID                      |
+|       1      |  `uint8` | Player count                  |
+|       1      |  `uint8` | Name length                   |
+|      *N*     | `string` | Lobby name                    |
+|       1      |  `uint8` | Host name length              |
+|      *M*     | `string` | Host name                     |
+|       2      | `uint16` | Port number                   |
+|       1      |  `uint8` | Status (0=Waiting, 1=Playing) |
 
-> * If no lobbies exist, the body is **empty** (*N* = 0).
+> * If no lobbies exist, the body is **empty**.
 
 
 # 0x03 - Join Lobby
@@ -4089,22 +3804,23 @@ The client sends a real-time input event.
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `01`   | `01101` | `000000010` |
+|    `01`   | `01101` | `000000110` |
 
 ### Example:
 
-Body length = `2` -> `000000010`
+Body length = `6` -> `000000110`
 
-**Raw header bytes:** `0x5A 0x02`
+**Raw header bytes:** `0x5A 0x06`
 
-*(Binary: `01 01101 000000010` - `01011010 00000010`)*
+*(Binary: `01 01101 000000110` - `01011010 00000110`)*
 
 ### Body
 
-| Size (bytes) |   Type  | Content                         |
-| :----------: | :-----: | :------------------------------ |
-|       1      | `uint8` | Key ID                          |
-|      1/8     |  `bool` | Action (`1`=press, `0`=release) |
+| Size (bytes) |   Type   | Content                         |
+| :----------: | :------: | :------------------------------ |
+|       1      |  `uint8` | Key ID                          |
+|       1      |  `bool`  | Action (`1`=press, `0`=release) |
+|       4      | `uint32` | Client ID                       |
 
 ***
 
@@ -4114,31 +3830,31 @@ Body length = `2` -> `000000010`
 
 The server responds with execution status:
 
-* `FAILED`: unotorized / input
-* `SUCESS`: action processed
-* `LATER`: action sucess, but handeled in a future command (e.g., will send `MOVE` later)
+* `FAILED`: unauthorized / input
+* `SUCCESS`: action processed
+* `LATER`: action success, but handled in a future command (e.g., will send `MOVE` later)
 
 ### Header
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `00`   | `01101` | `000000010` |
+|    `00`   | `01101` | `000000011` |
 
 ### Example (key\_id = 5, press, status = `LATER`):
 
-Body length = `2` - `000000010`
+Body length = `3` - `000000011`
 
-**Raw header bytes:** `0x1A 0x02`
+**Raw header bytes:** `0x1A 0x03`
 
-*(Binary: `00 01101 000000010` - `00011010 00000010`)*
+*(Binary: `00 01101 000000011` - `00011010 00000011`)*
 
 ### Body
 
-| Size (bytes) |   Type  | Content                                             |
-| :----------: | :-----: | :-------------------------------------------------- |
-|       1      | `uint8` | Key ID (echoed)                                     |
-|      1/8     |  `bool` | Action (echoed)                                     |
-|      2/8     |  `enum` | Status (`00`=`FAILED`, `01`=`SUCESS`, `10`=`LATER`) |
+| Size (bytes) |   Type  | Content                                           |
+| :----------: | :-----: | :------------------------------------------------ |
+|       1      | `uint8` | Key ID (echoed)                                   |
+|       1      |  `bool` | Action (echoed)                                   |
+|       1      | `uint8` | Status (`0`=`FAILED`, `1`=`SUCCESS`, `2`=`LATER`) |
 
 
 # 0x0E - Move
@@ -4321,21 +4037,19 @@ The client requests detailed information about another player.
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `01`   | `10001` | `000000001` |
+|    `01`   | `10001` |     *N*     |
 
-### Example:
+> Where *N* = player nickname length (1-20 chars).
 
-Body length = `1` - `000000001`
+**Raw header bytes:** `0x62 0xXX`
 
-**Raw header bytes:** `0x62 0x01`
-
-*(Binary: `01 10001 000000001` - `01100010 00000001`)*
+*(Binary: `01 10001` + body length)*
 
 ### Body
 
-| Size (bytes) |   Type  | Content   |
-| :----------: | :-----: | :-------- |
-|       1      | `uint8` | Player ID |
+| Size (bytes) |   Type   | Content         |
+| :----------: | :------: | :-------------- |
+|      *N*     | `string` | Player nickname |
 
 ***
 
@@ -4349,28 +4063,25 @@ The server sends detailed information about the requested player.
 
 | Direction |   Code  | Body Length |
 | :-------: | :-----: | :---------: |
-|    `00`   | `10001` |    11+*N*   |
+|    `00`   | `10001` |    12+*N*   |
 
-> Where *N* =  player name length (1 - 20).
+> Where *N* = player name length (1-20 chars).
 
-### Example (name = "Michel", *N*=6):
+**Raw header bytes:** `0x22 0xXX`
 
-Body length = `11 + 6` - `17` - `000010001`
-
-**Raw header bytes:** `0x22 0x11`
-
-*(Binary: `00 10001 000010001` - `00100010 00010001`)*
+*(Binary: `00 10001` + body length)*
 
 ### Body
 
-| Size (bytes) |   Type   | Content                            |
-| :----------: | :------: | :--------------------------------- |
-|       1      |  `uint8` | Player ID                          |
-|      *N*     | `string` | Player name                        |
-|       2      |  `int16` | X position (world = value \* 0.01) |
-|       2      |  `int16` | Y position (world = value \* 0.01) |
-|       2      |  `int16` | Z position (world = value \* 0.01) |
-|       4      | `uint32` | Score                              |
+| Size (bytes) |   Type   | Content                                     |
+| :----------: | :------: | :------------------------------------------ |
+|       1      |  `uint8` | Player ID                                   |
+|      *N*     | `string` | Player name                                 |
+|       4      | `uint32` | Score                                       |
+|       2      |  `int16` | X position                                  |
+|       2      |  `int16` | Y position                                  |
+|       2      |  `int16` | Z position                                  |
+|      1/8     |  `bool`  | Ready status (`1` = ready, `0` = not ready) |
 
 
 # 0x12 - Damage
@@ -4573,3 +4284,122 @@ Body length = `9` - `000001001`
 |       2      | `uint16` | Entity ID (`0` = system)                     |
 |      1/8     |  `bool`  | Entity type (`1` = player, `0` = NPC/system) |
 |      *N*     | `string` | Message text                                 |
+
+
+# 0x16 - Spawn
+
+
+
+# Spawn (ID 22)
+
+This command is sent by the server to notify clients that a new entity has spawned in the game world. This could be a player, enemy, or other game object.
+
+> **This command must be sent over UDP.**
+
+> **This command can only be sent by the server!**
+
+***
+
+## Server -> Client
+
+### Context
+
+The server broadcasts a spawn event (e.g., new enemy appears, player joins mid-game).
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `10110` |      21     |
+
+### Example:
+
+Body length = `21` - `000010101`
+
+**Raw header bytes:** `0x2D 0x15`
+
+*(Binary: `00 10110 000010101` - `00101101 00010101`)*
+
+### Body
+
+| Size (bytes) |   Type   | Content                   |
+| :----------: | :------: | :------------------------ |
+|       4      | `uint32` | Entity ID                 |
+|       4      |  `int32` | Entity type               |
+|       4      |  `int32` | X position                |
+|       4      |  `int32` | Y position                |
+|       4      |  `int32` | Z position                |
+|       4      | `uint32` | Client ID (if applicable) |
+
+
+# 0x17 - Lobby Update
+
+
+
+# Lobby Update (ID 23)
+
+This command is used to update lobby information on the server or to receive lobby updates from the server. It can be used to update lobby status, player count, or other lobby metadata.
+
+> **This command must be sent over TCP.**
+
+***
+
+## Client -> Server
+
+### Context
+
+The client requests to update lobby information or creates a new lobby.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `01`   | `10111` |     *N*     |
+
+> Where *N* = total body length based on lobby data.
+
+### Example:
+
+Body length = variable - depends on lobby name length
+
+**Raw header bytes:** `0x5E 0xXX`
+
+*(Binary: `01 10111` + body length)*
+
+### Body
+
+| Size (bytes) |   Type   | Content                       |
+| :----------: | :------: | :---------------------------- |
+|       1      |  `uint8` | Lobby ID                      |
+|       1      |  `uint8` | Player count                  |
+|      *N*     | `string` | Lobby name                    |
+|       2      | `uint16` | Port number                   |
+|       1      |  `uint8` | Status (0=Waiting, 1=Playing) |
+
+***
+
+## Server -> Client
+
+### Context
+
+The server responds to a lobby update request or broadcasts lobby changes.
+
+### Header
+
+| Direction |   Code  | Body Length |
+| :-------: | :-----: | :---------: |
+|    `00`   | `10111` |      1      |
+
+### Example:
+
+Body length = `1` - `000000001`
+
+**Raw header bytes:** `0x1E 0x01`
+
+*(Binary: `00 10111 000000001` - `00011110 00000001`)*
+
+### Body
+
+| Size (bytes) |  Type  | Content                                       |
+| :----------: | :----: | :-------------------------------------------- |
+|      1/8     | `bool` | Success status (`1` = success, `0` = failure) |
